@@ -1,5 +1,4 @@
-from cProfile import label
-from math import exp, log
+from math import log
 import sys
 import random
 import time
@@ -9,38 +8,6 @@ import numpy as np
 
 random.seed(time.time_ns())
 
-def GRR(p: float, D: dict = {}) -> int:
-    """_summary_
-
-    Args:
-        p (float): probability of replying truth answer
-        d (int): domain size of D
-    Returns: 
-        GRR function with argument v
-    """
-    def GRR_(v: int):
-        prob = random.random()
-
-        if prob < p:
-            return v
-        else:
-            return random.choice([number for number in D if number != v])
-    return GRR_
-
-def privacy_mechanism(varepsilon: float, D: dict = {}, type: str = "GRR"):
-    if type == "GRR":
-        if not dict:
-            raise Exception("Dict is required for GRR")
-
-        d = len(D)
-        p = exp(varepsilon) / (exp(varepsilon)+d-1)
-
-        # print(f"Generate Random Response Probability: {p}")
-
-        return GRR(p, D)
-    elif type == "None":
-        return lambda x: x
-    
 
 def DCG(ordered_list: List, rel:Dict) -> float:
     """_summary_

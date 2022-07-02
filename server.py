@@ -1,6 +1,7 @@
 from math import ceil, log
 from typing import Dict, List
-from utils import NDCG, plot_single_line, sort_by_frequency, privacy_mechanism, visualize_frequency
+from privacy_module import PrivacyModule 
+from utils import NDCG, plot_single_line, sort_by_frequency, visualize_frequency
 import numpy as np
 
 np.random.seed(123499)
@@ -30,6 +31,8 @@ class FAServer():
 
         if not self.clients:
             self.__init_clients()
+        self.C_truth = sort_by_frequency(self.clients, self.k)
+
 
     def __init_privacy_mechanism(self, privacy_mechanism_type: str):
         self.privacy_mechanism_type = privacy_mechanism_type if privacy_mechanism_type in self.__available_privacy_mechanism_type else "GRR"
@@ -62,7 +65,6 @@ class FAServer():
         clients = np.random.randint(low, high, self.n)
         clients = np.absolute(clients.astype(int))
         self.clients = clients
-        self.C_truth = sort_by_frequency(self.clients, self.k)
 
     def __simulate_client(self, type: str):
         if type == "gaussian":
@@ -99,15 +101,18 @@ class FAServer():
                 for offset in range(2**delta_s):
                     D_i[(val << delta_s) + offset] = 0
 
-            mechanism = privacy_mechanism(
-                self.varepsilon, D_i, self.privacy_mechanism_type)
-
+            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
+            # mechanism = privacy_mechanism(
+            #     self.varepsilon, D_i, self.privacy_mechanism_type)
+            mechanism = privacy_module.privacy_mechanism()
+            handle_response = privacy_module.handle_response() 
+            clients_responses = []
             for client in self.clients[(i-1)*group_size: i*group_size]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
+                clients_responses.append(response)
 
-                if D_i.get(response, -1) != -1:
-                    D_i[response] += 1
+            D_i = handle_response(clients_responses)
 
             D_i_sorted = sorted(D_i.items(), key=lambda x: x[-1], reverse=True)
             C_i = {}
@@ -122,8 +127,7 @@ class FAServer():
 
         ndcg = 0
         for rnd in range(round):
-            # np.random.shuffle(self.clients)
-            self.C_truth = sort_by_frequency(self.clients, self.k)
+            np.random.shuffle(self.clients)
 
             C_i = self.predict_heavy_hitters()
 
@@ -161,9 +165,9 @@ if __name__ == '__main__':
     max_varepsilon = 12
     g = 9
 
-    round = 5
+    round = 50
 
-    privacy_mechanism_type = "None"
+    privacy_mechanism_type = "GRR"
 
     server = FAServer(n, m, k, init_varepsilon, g, privacy_mechanism_type = privacy_mechanism_type)
     server.server_run_plot_varepsilon(
