@@ -87,7 +87,7 @@ def visualize_frequency(array, truth_top_k_heavy_hitters, k=sys.maxsize):
     plt.ylabel("count")
     bin, _, _ = plt.hist(array[:k], bins=len(np.bincount(array)), rwidth=0.9)
     for k in truth_top_k_heavy_hitters:
-        plt.text(k, bin[k], f"{k}")
+        plt.text(k, bin[k], f"{k}", fontsize="x-small")
     plt.title("Frequency Distribution")
     plt.savefig(f"truth_frequency_{time.time_ns()}.png")
 
