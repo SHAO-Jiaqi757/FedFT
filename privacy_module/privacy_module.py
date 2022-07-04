@@ -3,7 +3,7 @@ import random
 import time
 from typing import Dict, List
 
-from privacy_module.privacy_module_abs import PrivacyModuleABC
+from privacy_module.privacy_module_abc import PrivacyModuleABC
 
 random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
@@ -29,9 +29,10 @@ class PrivacyModule(PrivacyModuleABC):
                 raise Exception("Dict is required for GRR")
 
             d = len(self.D)
+            print(self.varepsilon, d)
             p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
 
-            # print(f"Generate Random Response Probability: {p}")
+            print(f"Generate Random Response Probability: {p}")
 
             return self.__GRR(p)
         elif self.type == "None":
