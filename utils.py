@@ -8,43 +8,6 @@ import numpy as np
 
 random.seed(time.time_ns())
 
-
-def DCG(ordered_list: List, rel:Dict) -> float:
-    """_summary_
-
-    Args:
-        ordered_list (List): ordered list
-        rel (Dict): relevance of each element in ordered_list
-
-    Returns:
-        float: Discount Cumulative Gain
-    """
-    DCG = 0
-    for indx, item in enumerate(ordered_list):       
-        rel_ = rel.get(item, 0)
-        DCG += rel_/log(indx+2)
-    return DCG
-        
-def NDCG(truth_order, pred_order, k):
-    """_summary_
-
-    Args:
-        truth_order (list): ground truth order
-        pred_order (list): predicted order
-        k (int): top-k heavy hitters
-    Returns:
-        float: Normalized Discount Cumulative Gain
-    """
-    top_k = min(k, len(truth_order), len(pred_order))
-    print(f"Find {top_k} top-k heavy hitters")
-    truth_order = truth_order[:top_k]
-    rel = {}
-    for number in truth_order:
-        rel[number] = top_k 
-        top_k-=1
-        
-    return DCG(pred_order, rel) / DCG(truth_order, rel)
-
 def sort_by_frequency(array, k=sys.maxsize) -> list:
     return np.argsort(-np.bincount(array))[:k]  
 
