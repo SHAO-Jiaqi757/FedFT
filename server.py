@@ -1,15 +1,13 @@
 from math import ceil, log
 from typing import Dict, List
-
-from sympy import evaluate
-from privacy_module import PrivacyModule 
+from privacy_module import PrivacyModule
 from evaluate_module import EvaluateModule
 from utils import plot_single_line, sort_by_frequency, visualize_frequency
 import numpy as np
 
 np.random.seed(123499)
 
-class FAServer():
+class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "NDCG", sampling_rate: float = 1):
         """_summary_
 
@@ -116,7 +114,7 @@ class FAServer():
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
-            for client in self.clients[(i-1)*group_size: i*group_size]:
+            for client in self.clients[(i-1)*group_size: (i)*group_size]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 clients_responses.append(response)
@@ -129,7 +127,7 @@ class FAServer():
             C_i = {}
             for indx in range(min(self.k, len(D_i_sorted))):
                 v, count = D_i_sorted[indx]
-                if count > 0.002*group_size:
+                if count > 0:
                     C_i[v] = count
             # print(f"Group {i} generated: {C_i}")
         return C_i
@@ -181,7 +179,7 @@ if __name__ == '__main__':
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
-    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
