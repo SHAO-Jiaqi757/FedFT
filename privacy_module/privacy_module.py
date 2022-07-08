@@ -1,6 +1,7 @@
 from math import exp
 import random
 import time
+import numpy as np
 from typing import Dict, List
 
 from privacy_module.privacy_module_abc import PrivacyModuleABC
@@ -29,10 +30,10 @@ class PrivacyModule(PrivacyModuleABC):
                 raise Exception("Dict is required for GRR")
 
             d = len(self.D)
-            print(self.varepsilon, d)
+            # print(self.varepsilon, d)
             p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
 
-            print(f"Generate Random Response Probability: {p}")
+            # print(f"Generate Random Response Probability: {p}")
 
             return self.__GRR(p)
         elif self.type == "None":
@@ -121,7 +122,7 @@ class PrivacyModule(PrivacyModuleABC):
             Returns:
                 _type_: results of Aggregating clients' Optimized Unary Encoding responses
             """
-            response_aggregate = [sum(x) for x in zip(responses)]
+            response_aggregate = np.sum(responses, axis=0) 
             for index, count in enumerate(response_aggregate):
                 key = self.D_keys[index]
                 self.D[key] += count

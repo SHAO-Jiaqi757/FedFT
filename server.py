@@ -10,7 +10,7 @@ import numpy as np
 np.random.seed(123499)
 
 class FAServer():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, g: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "NDCG"):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "NDCG", sampling_rate: float = 1):
         """_summary_
 
         Args:
@@ -18,22 +18,23 @@ class FAServer():
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            g (int): number of groups
+            batch_size (int): number of groups
             round (int): running round
             evaluate_type: evaluate function to estimate performance (NDCG or F1)
         """
         self.n = n
+        self.sampling_rate = sampling_rate
         self.m = m
         self.k = k
         self.varepsilon = varepsilon
-        self.g = g
+        self.batch_size = batch_size
         self.round = round
         self.clients = clients
         self.evaluate_type = evaluate_type
         self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform"]
-        self.__available_privacy_mechanism_type = ["GRR", "None"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -53,6 +54,7 @@ class FAServer():
             print("Invalid distribution type:: Default distribution will be 'poisson'")
             type = "poisson"
         self.__simulate_client(type)()
+        self.n = int(self.n*self.sampling_rate)
 
     def __simulate_client_poisson(self, mu=None, var=None):
         if mu is None and var is None:
@@ -89,7 +91,7 @@ class FAServer():
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            g (int): number of groups
+            batch_size (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
@@ -97,11 +99,11 @@ class FAServer():
         C_i = {}
         for i in range(2**s_0):
             C_i[i] = 0
-        group_size = self.n//self.g
-        for i in range(1, self.g+1):
-            s_i = s_0 + ceil(i*(self.m-s_0)/self.g)
-            delta_s = ceil(i*(self.m-s_0)/self.g) - \
-                ceil((i-1)*(self.m-s_0)/self.g)
+        group_size = self.n//self.batch_size
+        for i in range(1, self.batch_size+1):
+            s_i = s_0 + ceil(i*(self.m-s_0)/self.batch_size)
+            delta_s = ceil(i*(self.m-s_0)/self.batch_size) - \
+                ceil((i-1)*(self.m-s_0)/self.batch_size)
             D_i = {}
             for val in C_i.keys():
                 for offset in range(2**delta_s):
@@ -113,6 +115,7 @@ class FAServer():
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
+
             for client in self.clients[(i-1)*group_size: i*group_size]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
@@ -121,10 +124,12 @@ class FAServer():
             D_i = handle_response(clients_responses)
 
             D_i_sorted = sorted(D_i.items(), key=lambda x: x[-1], reverse=True)
+
+
             C_i = {}
             for indx in range(min(self.k, len(D_i_sorted))):
                 v, count = D_i_sorted[indx]
-                if count > 0:
+                if count > 0.002*group_size:
                     C_i[v] = count
             # print(f"Group {i} generated: {C_i}")
         return C_i
@@ -133,7 +138,7 @@ class FAServer():
         evaluate_score = 0
         for rnd in range(self.round):
             np.random.shuffle(self.clients)
-
+            
             C_i = self.predict_heavy_hitters()
 
             C_i = list(C_i.keys())
@@ -163,19 +168,21 @@ class FAServer():
 if __name__ == '__main__':
     n = 1000
 
-    m = 16
-    k = 1
+    m = 32
+    k = 9
     init_varepsilon = 0.2
-    step_varepsilon = 0.2
-    max_varepsilon = 5
-    g = 9
+    step_varepsilon = 0.5
+    max_varepsilon = 12 
+    batch_size = 9
 
+    sampling_rate = 1
     round = 50
 
-    privacy_mechanism_type = "None" # ["GRR", "None"]
+    privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
-    server = FAServer(n, m, k, init_varepsilon, g, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
+    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+        sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 

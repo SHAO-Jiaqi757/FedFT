@@ -45,7 +45,7 @@ class EvaluateModule(EvaluateModuleABC):
             """
         DCG = 0
         for indx, item in enumerate(estimate_top_k):       
-            rel_ = rel.get(item, 0)
+            rel_ = 2**rel.get(item, 0) - 1
             DCG += rel_/log(indx+2)
         return DCG
         
@@ -59,8 +59,8 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             float: Normalized Discount Cumulative Gain
         """
-        top_k = min(self.top_k, len(truth_top_k), len(estimate_top_k))
-        print(f"Find {top_k} top-k heavy hitters")
+        top_k = self.top_k
+        print(f"Find {len(estimate_top_k)} top-k heavy hitters")
         truth_top_k = truth_top_k[:top_k]
         rel = {}
         for number in truth_top_k:
