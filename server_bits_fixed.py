@@ -1,4 +1,11 @@
+"""_summary_
+This experiment's configuration is defined fixed bits length that clients send to server every batch.
+client size is increasing for each batch.
+Returns:
+    _type_: _description_
+"""
 from math import ceil, log
+import random
 from typing import Dict, List
 
 from privacy_module import PrivacyModule
@@ -7,7 +14,10 @@ from server import FAServerPEM
 from utils import visualize_frequency
 
 
+random.seed(0)
+
 class FAServer(FAServerPEM):
+
     def predict_heavy_hitters(self) -> Dict:
         """_summary_
 
@@ -21,7 +31,9 @@ class FAServer(FAServerPEM):
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        group_size = self.n//self.batch_size
+        # group_size = self.n//self.batch_size
+        adder_base = ceil((2*self.n)/(self.batch_size*(self.batch_size+1)))
+        client_offset = 0
 
         bits_per_batch = ceil(self.m / self.batch_size)
         s_0 = bits_per_batch
@@ -29,8 +41,8 @@ class FAServer(FAServerPEM):
         for i in range(2**s_0):
             C_i[i] = 0
 
+
         for i in range(self.batch_size):
-   
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
@@ -40,17 +52,25 @@ class FAServer(FAServerPEM):
                 for offset in range(2**delta_s):
                     D_i[(val << delta_s) + offset] = 0
 
+            # print("Privacy mechanism type:", self.privacy_mechanism_type)
             privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
             # mechanism = privacy_mechanism(
             #     self.varepsilon, D_i, self.privacy_mechanism_type)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
+            
+            adder = (i+1)*adder_base
 
-            for client in self.clients[(i)*group_size: (i+1)*group_size]:
+            print(f"Sampling {adder} clients")
+
+            for client in random.choices(self.clients, k=adder):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 clients_responses.append(response)
+
+            client_offset += adder
+     
 
             D_i = handle_response(clients_responses)
 
@@ -72,8 +92,8 @@ if __name__ == '__main__':
     m = 32
     k = 9
     init_varepsilon = 0.2
-    step_varepsilon = 0.5
-    max_varepsilon = 12 
+    step_varepsilon = 0.3
+    max_varepsilon = 3
     batch_size = 9
 
     sampling_rate = 1
@@ -82,9 +102,9 @@ if __name__ == '__main__':
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
-    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 
-    visualize_frequency(server.clients, server.C_truth)
+    visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
