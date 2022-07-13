@@ -31,18 +31,18 @@ class FAServer(FAServerPEM):
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        # group_size = self.n//self.batch_size
         adder_base = ceil((2*self.n)/(self.batch_size*(self.batch_size+1)))
-        client_offset = 0
 
         bits_per_batch = ceil(self.m / self.batch_size)
-        s_0 = bits_per_batch
+
+        s_0 = 0
         C_i = {}
-        for i in range(2**s_0):
-            C_i[i] = 0
+        C_i[0] = 0
+        
 
 
         for i in range(self.batch_size):
+
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
@@ -61,7 +61,8 @@ class FAServer(FAServerPEM):
             clients_responses = []
             
             adder = (i+1)*adder_base
-
+            
+           
             print(f"Sampling {adder} clients")
 
             for client in random.choices(self.clients, k=adder):
@@ -69,7 +70,6 @@ class FAServer(FAServerPEM):
                 response = mechanism(prefix_client)
                 clients_responses.append(response)
 
-            client_offset += adder
      
 
             D_i = handle_response(clients_responses)
@@ -89,18 +89,18 @@ class FAServer(FAServerPEM):
 if __name__ == '__main__':
     n = 1000
 
-    m = 32
+    m = 56
     k = 9
     init_varepsilon = 0.2
     step_varepsilon = 0.3
     max_varepsilon = 3
-    batch_size = 9
+    batch_size = 16
 
     sampling_rate = 1
-    round = 50
+    round = 20
 
-    privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
+    privacy_mechanism_type = "OUE" # ["GRR", "None","OUE"]
+    evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
