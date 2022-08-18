@@ -1,6 +1,6 @@
 from math import ceil, log
 from typing import Dict, List
-from privacy_module import PrivacyModule
+from privacy_module import PEMPrivacyModule
 from evaluate_module import EvaluateModule
 from utils import plot_single_line, sort_by_frequency, visualize_frequency
 import numpy as np
@@ -32,7 +32,7 @@ class FAServerPEM():
         self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform"]
-        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE", "PreHashing","GRR_Weight"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -51,6 +51,7 @@ class FAServerPEM():
         if type not in self.__available_data_distribution:
             print("Invalid distribution type:: Default distribution will be 'poisson'")
             type = "poisson"
+        self.client_distribution_type = type
         self.__simulate_client(type)()
         self.n = int(self.n*self.sampling_rate)
 
@@ -107,7 +108,7 @@ class FAServerPEM():
                 for offset in range(2**delta_s):
                     D_i[(val << delta_s) + offset] = 0
 
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
+            privacy_module = PEMPrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
             # mechanism = privacy_mechanism(
             #     self.varepsilon, D_i, self.privacy_mechanism_type)
             mechanism = privacy_module.privacy_mechanism()
@@ -161,27 +162,29 @@ class FAServerPEM():
 
         plot_single_line(varepsilon_list, evaluate_score_list, "varepsilon",
                          f"{self.evaluate_type}", f"{self.evaluate_type} vs varepsilon", k=self.k)
+        return varepsilon_list, evaluate_score_list
 
 
 if __name__ == '__main__':
     n = 1000
 
-    m = 32
+    m = 16
     k = 9
     init_varepsilon = 0.2
-    step_varepsilon = 0.5
-    max_varepsilon = 12 
+    step_varepsilon = 0.1
+    max_varepsilon = 2
     batch_size = 9
 
     sampling_rate = 1
-    round = 50
+    round = 20 
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
+    evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 
-    visualize_frequency(server.clients, server.C_truth)
+    visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
+    
