@@ -89,22 +89,23 @@ class FAServer(FAServerPEM):
 if __name__ == '__main__':
     n = 1000
 
-    m = 56
+    m = 32
     k = 9
-    init_varepsilon = 0.2
-    step_varepsilon = 0.3
-    max_varepsilon = 3
+    init_varepsilon = 0.1
+    step_varepsilon = 0.1
+    max_varepsilon = 1.6
     batch_size = 16
 
     sampling_rate = 1
-    round = 20
+    round = 5
 
-    privacy_mechanism_type = "OUE" # ["GRR", "None","OUE"]
+    privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
+    server.predict_heavy_hitters()
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 
-    visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
+    # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)

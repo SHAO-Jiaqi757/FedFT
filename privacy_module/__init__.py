@@ -1,1 +1,2 @@
 from .privacy_module import PrivacyModule
+from .PEM_privacy_model import PEMPrivacyModule

@@ -24,6 +24,10 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             _type_: f1 score
         """
+        if len(estimate_top_k) == 0:
+            print("No estimated top-k heavy hitters!")
+            return 0
+
         hit = 0
         not_hit = 0
         for hitter in estimate_top_k:

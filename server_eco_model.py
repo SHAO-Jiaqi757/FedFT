@@ -7,13 +7,14 @@ Returns:
 from math import ceil, log, exp, sqrt, pi
 import random
 from typing import Dict, List
+from xml.etree.ElementPath import find
 
 import numpy as np
 
 from privacy_module import PrivacyModule
 from server import FAServerPEM
 
-from utils import visualize_frequency
+from utils import _init_clients, visualize_frequency
 
 
 random.seed(0)
@@ -30,7 +31,7 @@ class FAServer(FAServerPEM):
             return client_valuation_uniform
 
     def simulate_client_profit(self):
-        self.clients_privacy_budget = np.random.poisson(1, size=self.n) # heterogeneous clients' privacy tolerance
+        self.clients_privacy_budget = np.random.uniform(0.5, 3, self.n) # heterogeneous clients' privacy tolerance
         self.clients_privacy_cost = [max(-(self.clients_privacy_budget[i] - self.varepsilon), 0) + sqrt(self.varepsilon) for i in range(self.n)]
         client_valuation_func_type = "gaussian"
         client_valuation_func = self.client_valuation(client_valuation_func_type, self.varepsilon)
@@ -72,20 +73,35 @@ class FAServer(FAServerPEM):
         
         C_i = {}
         C_i[0] = 0
-               
+        
+        find_budget = False
+
         for i in range(self.batch_size):
-            min_clients = 0.03*i*self.n
+            min_clients = 0.03*(i+1)*self.n
+            
+            self.varepsilon += 0.2
+
             participants = self.get_participants()
-            # while len(participants) < min_clients:
+
+
+            while len(participants) == 0:
+                self.varepsilon -= 0.1
+                participants = self.get_participants()
+
+                
+            # while (not find_budget) and len(participants) < min_clients:
             #     self.varepsilon -= 0.1
             #     if self.varepsilon < 0:
-            #         self.varepsilon += 0.1
+            #         self.varepsilon = self.max_budget
             #         participants = self.get_participants()
+            #         find_budget = True
             #         break
             #     participants = self.get_participants()
-                
+
+
                 
             print(f"Batch [{i}] :: Total {len(participants)} participants under Privacy Budget {self.varepsilon}")
+            self.max_budget = self.varepsilon
 
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
@@ -132,13 +148,13 @@ if __name__ == '__main__':
 
     m = 32
     k = 9
-    init_varepsilon = 0.1
+    init_varepsilon = 3.4
     step_varepsilon = 0.2
     max_varepsilon = 3 
     batch_size = 16
 
     sampling_rate = 1
-    round = 10
+    round = 1
 
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
@@ -147,8 +163,8 @@ if __name__ == '__main__':
         sampling_rate= sampling_rate)
     
     # print(server.predict_heavy_hitters())
-    server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-
+    # server.server_run_plot_varepsilon(
+    #     init_varepsilon,  step_varepsilon, max_varepsilon)
+    server.server_run()
 
     # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
