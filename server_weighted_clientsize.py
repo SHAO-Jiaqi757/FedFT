@@ -11,6 +11,7 @@ from typing import Dict, List
 from privacy_module import PrivacyModule
 from server import FAServerPEM
 from server_tree_weighted import FAServer
+from triehh import SimulateTrieHH
 
 from utils import plot_all_in_one, visualize_frequency, weight_score
 
@@ -91,17 +92,17 @@ class ServerWeightClientSize(FAServerPEM):
 
 
 if __name__ == '__main__':
-    n = 1000
+    n = 10000
 
     m = 32
     k = 8
     init_varepsilon = 0.2
-    step_varepsilon = 0.4
-    max_varepsilon = 3
-    batch_size = 32
+    step_varepsilon = 0.8
+    max_varepsilon = 12
+    batch_size = 8
 
     sampling_rate = 1
-    round = 20
+    round = 10
 
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
@@ -131,8 +132,19 @@ if __name__ == '__main__':
     x, y = server.server_run_plot_varepsilon(
     init_varepsilon,  step_varepsilon, max_varepsilon)
 
-    xs = [xc, xn, x]
-    ys = [yc, yn, y]
+    # ----TrieHH Tree---- #
+    delta = 1/(n**2)
+    evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    plot_all_in_one(xs, ys, "privacy budget", "F1", "Compare with using incremental client_size", [ "Weight Tree & Client Size fitting", "Weight Tree", "Standard Tree"] )
-    # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
+    server = SimulateTrieHH(n, m, k, init_varepsilon, batch_size, round, 
+            delta=delta, evaluate_type=evaluate_module_type)
+    # server.server_run()
+    x_triehh, y_triehh = server.server_run_plot_varepsilon(
+        init_varepsilon,  step_varepsilon, max_varepsilon)
+
+
+    ## Visualize Comparison ##
+    xs = [xc, xn, x, x_triehh]
+    ys = [yc, yn, y, y_triehh]
+
+    plot_all_in_one(xs, ys, "privacy budget", "F1", "Compare with using incremental client_size", [ "Weight Tree & Client Size fitting", "Weight Tree", "Standard Tree", "TrieHH"] )

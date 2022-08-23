@@ -81,18 +81,6 @@ def decode_result(self, result: List) -> List:
         result[idx] = int.to_bytes(number, byteorder="little", length=nbytes).decode(self.encoding)
     return result
 
-def _init_clients() -> list:
-    """
-    Initialize clients
-    return:
-    clients (list) ： return a list of clients
-    """
-    with open("dataset/clients_triehh.txt", 'rb') as fp:
-        clients = pickle.load(fp)
-    client_num = len(clients)
-    print(f'Total number of clients: {client_num}')
-    return clients
-
 
 if __name__ == '__main__':
     xs = [[i for i in range(10)] for _ in range(2)]

@@ -8,7 +8,7 @@ import numpy as np
 np.random.seed(123499)
 
 class FAServerPEM():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "NDCG", sampling_rate: float = 1):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
         """_summary_
 
         Args:
@@ -39,7 +39,7 @@ class FAServerPEM():
         if not self.clients:
             self.__init_clients()
         self.C_truth = sort_by_frequency(self.clients, self.k)
-
+        
 
     def __init_privacy_mechanism(self, privacy_mechanism_type: str):
         self.privacy_mechanism_type = privacy_mechanism_type if privacy_mechanism_type in self.__available_privacy_mechanism_type else "GRR"
@@ -171,15 +171,15 @@ if __name__ == '__main__':
     m = 16
     k = 9
     init_varepsilon = 0.2
-    step_varepsilon = 0.1
-    max_varepsilon = 2
+    step_varepsilon = 0.3
+    max_varepsilon = 12
     batch_size = 9
 
     sampling_rate = 1
     round = 20 
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
+    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
     server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
