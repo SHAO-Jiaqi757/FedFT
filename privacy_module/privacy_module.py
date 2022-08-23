@@ -103,9 +103,13 @@ class PrivacyModule(PrivacyModuleABC):
             if prob < p:
                 return v
             else:
-                random_choice_options = [item for item in self.D if item != v]
-                random_choice_options.append(random.randint(0, 2**(self.batch*self.bits_per_batch)))
-                return random.choice(random_choice_options)
+                random_choice_options = list(self.D.keys())
+                if v in random_choice_options:
+                    random_choice_options.append(random.randint(0, 2**(self.batch*self.bits_per_batch))) # randomly select X
+                else:
+                    random_choice_options.append(v) # X = v
+
+                return random.choice(random_choice_options) # random response
         return GRR_
 
 
