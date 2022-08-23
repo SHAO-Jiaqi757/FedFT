@@ -36,9 +36,6 @@ class Tree(ABC):
     def search(self, target, node, display):
         pass 
     @abstractmethod
-    def findHeavyHitters(self, node):
-        pass 
-    @abstractmethod
     def getHeavyHitters(self):
         pass
     @abstractmethod
@@ -48,9 +45,6 @@ class Tree(ABC):
     def display(self, node: TreeNode):
         pass
     @abstractmethod
-    def _inference_(self, s):
-        pass 
-    
     def inference(self, s):
         return self._inference_(s) 
 
@@ -62,7 +56,6 @@ class Node(TreeNode):
     def __init__(self, k):
         self.key = k
         self.children = {}
-        # self.isLeaf = 
             
     def isLeaf(self):
         """

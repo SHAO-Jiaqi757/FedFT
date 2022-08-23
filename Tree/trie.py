@@ -1,42 +1,66 @@
-from Tree.tree import Tree, Node
+from tree import Tree, Node
 
 class TrieNode(Node):
-    def __init__(self, weight=0, k=None):
+    def __init__(self, k, weight=0):
+        """
+        TrieNode:: key, children(List[TrieNode]), weight(float, optional), level(int), prefix(ancesters' keys, optinal)
+
+        Args:
+            weight (float, optional): node's weight, used for weighted_trie. Defaults to 0.
+            k (_type_, optional): key value with fixed bit length. Defaults to None.
+        """
         super(TrieNode, self).__init__(k)
         self.weight = weight
+        self.level = 0
 
 
 class Trie(Tree):
-    def __init__(self):
-        """Initialize Trie with root
-        """
+    def __init__(self, bit_len: int):
+
         super(Tree, self).__init__()
-        self.root = TrieNode()
+        self.bit_len = bit_len
+        
+        self.root = TrieNode(0)
+        self.nodes = [{0: self.root}] # Nodes in the Trie, {key: TrieNode}
+        self.level = 0
         self.__heavyHitters = []
         self.__inferenceResult = set()
     
-    def insert(self, key, weight=0, node:TrieNode = None):
-        """Insert a word into Trie
+    def insert(self, pattern, batch, weight=0, node:TrieNode = None):
+        """Insert a word into TrieNode
 
         Args:
-            key (): word to be inserted into Trie
+            parttern (): parttern to be inserted into Trie
             node (TrieNode, optional): node to be inserted. Defaults to None, the root node.
         """
-        if node == None:
-            node = self.root
-        self._insert_(key,weight, node)
 
  
-    def _insert_(self, key, weight, node:TrieNode):
+        if node == None:
+            node = self.root
+        while self.level <= batch:
+            self.nodes.append({})
+            self.level+=1
+        self._insert_(pattern, weight, node, batch)
+
+ 
+    def _insert_(self, pattern, weight, node:TrieNode, batch):
         
-        indx = 0 
-        while indx < len(key):
-            newKey = ord(key[indx]) - ord('a')
+        offset = batch
+        while offset >= 0:
+            newKey = pattern >> (offset*self.bit_len)
+            newKey = (newKey & (1<<self.bit_len)-1)
+            
             if newKey not in node.children.keys():
-                node.children[newKey] = TrieNode(newKey)
-                # print(f"Insert:: {key}")
-            node = node.children[newKey]
-            indx += 1
+                newNode = TrieNode(newKey)
+                self.nodes[node.level+1][newKey] = newNode # append newNode at this level.
+                newNode.level = node.level+1
+                node.children[newKey] = newNode
+
+                node = newNode
+            else:
+                node = node.children[newKey]
+                
+            offset-=1
         
 
     def search(self, target, node:TrieNode = None, display=False):
@@ -47,25 +71,34 @@ class Trie(Tree):
             node (TrieNode, optional): trie node that searching procedure starts with . Defaults to None, the root node.
 
         Returns:
-            Boolean: True for existing searching path in the Trie
+            TrieNode: last node in existing searching path in the Trie
         """
         if node is None:
             node = self.root
-        result = self._search_(node, target, 0)
+        cur, result = self._search_(node, 0, target, self.level-1)
         
-        display and print(f"Searching {target}: {result}")
+        not display and print(f"Searching {target}: {cur}")
 
-        return result
+        return cur, result
 
-    def _search_(self, node:TrieNode, target, indx:int):
-        if indx >= len(target):
-            return True
-        key = ord(target[indx]) - ord('a')
+    def _search_(self, node:TrieNode, cur, target, offset:int):
+        if offset < 0:
+            return cur, node
+
+        key = (target >> (offset*self.bit_len)) & ((1<<self.bit_len) - 1)
         if key not in node.children.keys():
-            return False 
-        return self._search_(node.children[key], target, indx+1)
+            return cur, node 
         
-    def findHeavyHitters(self,node:TrieNode = None):
+        node = node.children[key]
+
+        cur = (cur << self.bit_len) + key
+        if node.isLeaf() & offset > 0:  # 
+            if (cur << (offset*self.bit_len)) == target:
+                return cur, node
+
+        return self._search_(node, cur, target, offset-1)
+        
+    def __findHeavyHitters(self, node:TrieNode = None):
         """DFS for finding heavy hitters
 
         Args:
@@ -74,12 +107,12 @@ class Trie(Tree):
         if node == None:
             node = self.root
 
-        self._display_(node, "", display=False)
+        self._display_(node, 0, display=False)
 
     def getHeavyHitters(self):
         self.__heavyHitters = []
 
-        self.findHeavyHitters()
+        self.__findHeavyHitters()
         return self.__heavyHitters
 
     def display(self, node:TrieNode = None):
@@ -91,7 +124,7 @@ class Trie(Tree):
         if node == None:
             node = self.root
 
-        self._display_(node, "", display=True)
+        self._display_(node, 0, display=True)
         
     def _display_(self, node: TrieNode, s, display=True):
         """DFS printing at the start with a given node
@@ -102,7 +135,10 @@ class Trie(Tree):
         """
         for childKey in node.children.keys():
             if node.children[childKey].isLeaf():
-                result = s + chr(childKey + ord('a'))
+                result = (s << self.bit_len) + childKey
+                offset =  self.level - node.children[childKey].level
+                result = result << (self.bit_len*offset)
+                
                 if display:
                     print(result)
                 else: 
@@ -112,17 +148,13 @@ class Trie(Tree):
                         self.__heavyHitters.append(result)
 
             else:
-                self._display_(node.children[childKey], s+ chr(childKey + ord('a')), display)
+                self._display_(node.children[childKey], (s << self.bit_len) + childKey, display)
     
-    def _inference_(self, s):
-        node = self.root
-        for indx, i in enumerate(s): 
-            if ord(i)-ord('a') not in node.children.keys():
-                indx -= 1
-                break
-            node = node.children[ord(i)-ord('a')]
-        if indx >= 0:
-            self._display_(node, s[:indx+1], display=False)
+    def __inference(self, s):
+
+        cur, node = self.search(s)
+
+        self._display_(node, cur, display=False)
         return self.__inferenceResult
     
     def getInferenceResult(self):
@@ -131,3 +163,9 @@ class Trie(Tree):
     def clearInferenceResult(self):
         self.__inferenceResult = set()
   
+    def inference(self, s):
+        self.inferenceMode = True
+        result = self.__inference(s)
+        self.inferenceMode = False
+        return result
+
