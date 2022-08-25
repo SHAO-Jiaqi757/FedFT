@@ -67,8 +67,10 @@ class FAServer(FAServerPEM):
             for client in random.choices(self.clients, k=adder):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                clients_responses.append(response)
-
+                # clients_responses.append(response)
+                p = random() 
+                if p >= self.connection_loss_rate:
+                    clients_responses.append(response)
      
 
             D_i = handle_response(clients_responses)
@@ -95,7 +97,6 @@ if __name__ == '__main__':
     max_varepsilon = 2
     iterations = 9
 
-    sampling_rate = 1
     round = 20
 
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
@@ -103,8 +104,9 @@ if __name__ == '__main__':
 
     
     # ----Weight Tree---- # 
-    server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+    server = FAServer(n, m, k, init_varepsilon, iterations, round, \
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+        )
 
     # server.server_run()
     xn, yn = server.server_run_plot_varepsilon(
@@ -113,8 +115,9 @@ if __name__ == '__main__':
     # ----Standard Tree---- #
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, \
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+        )
  
     x, y = server.server_run_plot_varepsilon(
     init_varepsilon,  step_varepsilon, max_varepsilon)

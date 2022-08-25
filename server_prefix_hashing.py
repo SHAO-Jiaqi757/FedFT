@@ -61,7 +61,10 @@ class FAServerPreHashing(FAServerPEM):
             for client in self.clients:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                clients_responses.append(response)
+                # clients_responses.append(response)
+                p = random() 
+                if p >= self.connection_loss_rate:
+                    clients_responses.append(response)
 
         # ---------------------------clients --------------------------------
 
@@ -90,14 +93,13 @@ if __name__ == '__main__':
     max_varepsilon = 3
     iterations = 4
 
-    sampling_rate = 1
     round = 5
 
     privacy_mechanism_type = "PreHashing" # ["GRR", "None","OUE", "PreHashing"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = FAServerPreHashing(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+    server = FAServerPreHashing(n, m, k, init_varepsilon, iterations, round, \
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 

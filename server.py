@@ -1,4 +1,5 @@
 from math import ceil, log
+from random import random
 from typing import Dict, List
 from privacy_module import PEMPrivacyModule
 from evaluate_module import EvaluateModule
@@ -8,7 +9,7 @@ import numpy as np
 np.random.seed(123499)
 
 class FAServerPEM():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", connection_loss_rate: float = 0):
         """_summary_
 
         Args:
@@ -24,7 +25,7 @@ class FAServerPEM():
             evaluate_type (str): evaluate function to estimate performance (NDCG or F1)
         """
         self.n = n
-        self.sampling_rate = sampling_rate
+        self.connection_loss_rate = connection_loss_rate
         self.m = m
         self.k = k
         self.varepsilon = varepsilon
@@ -59,7 +60,6 @@ class FAServerPEM():
             type = "poisson"
         self.client_distribution_type = type
         self.__simulate_client(type)()
-        self.n = int(self.n*self.sampling_rate)
 
     def __simulate_client_poisson(self, mu=None, var=None):
         if mu is None and var is None:
@@ -124,7 +124,10 @@ class FAServerPEM():
             for client in self.clients[(i-1)*group_size: (i)*group_size]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                clients_responses.append(response)
+                
+                p = random() 
+                if p >= self.connection_loss_rate:
+                    clients_responses.append(response)
 
             D_i = handle_response(clients_responses)
 
@@ -181,7 +184,6 @@ if __name__ == '__main__':
     max_varepsilon = 12
     iterations =10
 
-    sampling_rate = 1
     round = 10
 
     evaluate_module_type = "F1" # ["NDCG", "F1"]
@@ -190,7 +192,7 @@ if __name__ == '__main__':
 
     server = FAServerPEM(n, m, k, init_varepsilon, iterations, round,
          privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+        )
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 

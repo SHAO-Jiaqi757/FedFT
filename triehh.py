@@ -210,7 +210,6 @@ if __name__ == '__main__':
     max_varepsilon = 12
     iterations =8 
 
-    # sampling_rate = 1
     round = 2 
     delta = 1/(n**2)
     evaluate_module_type = "F1" # ["NDCG", "F1"]

@@ -153,14 +153,12 @@ if __name__ == '__main__':
     max_varepsilon = 3 
     iterations = 16
 
-    sampling_rate = 1
     round = 1
 
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+    server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
     
     # print(server.predict_heavy_hitters())
     # server.server_run_plot_varepsilon(

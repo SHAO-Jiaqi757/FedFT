@@ -64,7 +64,9 @@ class ServerWeightClientSize(FAServerPEM):
             for client in random.choices(self.clients, k=adder):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                clients_responses.append(response)
+                p = random() 
+                if p >= self.connection_loss_rate:
+                    clients_responses.append(response)
 
      
 
@@ -92,7 +94,6 @@ if __name__ == '__main__':
     max_varepsilon = 12
     iterations =10
 
-    sampling_rate = 1
     round = 10
 
     truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     # ----Weight Tree & Client Size fitting---- # 
     server = ServerWeightClientSize(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
+        )
 
     xc, yc = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)

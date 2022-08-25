@@ -1,5 +1,5 @@
 """_summary_
-This experiment used to compare different models.
+This experiment used to compare different models when clients randomly loss connection.
 Returns:
     _type_: _description_
 """
@@ -34,8 +34,7 @@ if __name__ == '__main__':
 
     # ----Weight Tree & Client Size fitting---- # 
     server = ServerWeightClientSize(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
-        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type
-        )
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
 
     xc, yc = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
@@ -43,8 +42,7 @@ if __name__ == '__main__':
    
    # ----Weight Tree---- # 
     server = FAServer(n, m, k, init_varepsilon, iterations, round,clients=clients, C_truth=truth_top_k, 
-    privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type
-        )
+    privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
 
     # server.server_run()
     xn, yn = server.server_run_plot_varepsilon(
@@ -54,7 +52,8 @@ if __name__ == '__main__':
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type
+       )
  
     x, y = server.server_run_plot_varepsilon(
     init_varepsilon,  step_varepsilon, max_varepsilon)
