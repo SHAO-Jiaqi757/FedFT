@@ -25,21 +25,21 @@ class ServerWeightClientSize(FAServerPEM):
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        adder_base = ceil((2*self.n)/(self.batch_size*(self.batch_size+1)))
+        adder_base = ceil((2*self.n)/(self.iterations*(self.iterations+1)))
 
-        bits_per_batch = ceil(self.m / self.batch_size)
+        bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         C_i = {}
         C_i[0] = 0 # initial weight_score
         
 
-        for i in range(self.batch_size):
+        for i in range(self.iterations):
 
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     init_varepsilon = 0.2
     step_varepsilon = 0.8
     max_varepsilon = 12
-    batch_size =10
+    iterations =10
 
     sampling_rate = 1
     round = 10
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     # ----Weight Tree & Client Size fitting---- # 
-    server = ServerWeightClientSize(n, m, k, init_varepsilon, batch_size, round, clients=clients, C_truth = truth_top_k, \
+    server = ServerWeightClientSize(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
 

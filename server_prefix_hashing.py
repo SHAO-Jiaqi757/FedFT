@@ -26,18 +26,18 @@ class FAServerPreHashing(FAServerPEM):
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        bits_per_batch = ceil(self.m / self.batch_size)
+        bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         C_i = defaultdict(int)      
 
 
-        for i in range(self.batch_size):
+        for i in range(self.iterations):
 
             s_i = min(s_0 + bits_per_batch, self.m)
             s_0 = s_i
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     init_varepsilon = 0.2
     step_varepsilon = 0.3
     max_varepsilon = 3
-    batch_size = 4
+    iterations = 4
 
     sampling_rate = 1
     round = 5
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     privacy_mechanism_type = "PreHashing" # ["GRR", "None","OUE", "PreHashing"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = FAServerPreHashing(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServerPreHashing(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)

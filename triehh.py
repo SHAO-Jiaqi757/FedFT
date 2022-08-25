@@ -38,15 +38,15 @@ class ServerState(object):
 
 class SimulateTrieHH(FAServerPEM):
     """Simulation for TrieHH."""
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], C_truth: List = [],\
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [],\
             evaluate_type='F1', delta=2.3e-12, encoding="ascii", theta = None):
-        super().__init__(n, m, k, varepsilon, batch_size, round, clients, C_truth=C_truth, evaluate_type=evaluate_type)
+        super().__init__(n, m, k, varepsilon, iterations, round, clients, C_truth=C_truth, evaluate_type=evaluate_type)
 
         # super().__init__(self)
         
         self.trie_total_bits = 0
         self.msg_counts = self.m
-        self.bit_len = math.ceil(self.m / self.batch_size)
+        self.bit_len = math.ceil(self.m / self.iterations)
         print(f'Bit per round: {self.bit_len}')
         
         self.delta = delta
@@ -208,14 +208,14 @@ if __name__ == '__main__':
     init_varepsilon = 2
     step_varepsilon = 0.3
     max_varepsilon = 12
-    batch_size =8 
+    iterations =8 
 
     # sampling_rate = 1
     round = 2 
     delta = 1/(n**2)
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = SimulateTrieHH(n, m, k, init_varepsilon, batch_size, round, 
+    server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, 
             delta=delta, evaluate_type=evaluate_module_type)
     # server.server_run()
     server.server_run_plot_varepsilon(

@@ -26,20 +26,20 @@ class FAServer(FAServerPEM):
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        # adder_base = ceil((2*self.n)/(self.batch_size*(self.batch_size+1)))
+        # adder_base = ceil((2*self.n)/(self.iterations*(self.iterations+1)))
 
-        bits_per_batch = ceil(self.m / self.batch_size)
+        bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         C_i = {}
         C_i[0] = 0 # initial weight_score
 
-        for i in range(self.batch_size):
+        for i in range(self.iterations):
 
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
@@ -60,7 +60,7 @@ class FAServer(FAServerPEM):
             clients_responses = []
 
             # adder = (i+1)*adder_base
-            adder = int(self.n/self.batch_size)
+            adder = int(self.n/self.iterations)
             
 
             print(f"Sampling {adder} clients")
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     init_varepsilon = 0.2
     step_varepsilon = 0.1
     max_varepsilon = 2
-    batch_size = 9
+    iterations = 9
 
     sampling_rate = 1
     round = 20
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     
     # ----Weight Tree---- # 
-    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
 
     # server.server_run()
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # ----Standard Tree---- #
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
  
     x, y = server.server_run_plot_varepsilon(

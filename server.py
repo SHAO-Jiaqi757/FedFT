@@ -8,7 +8,7 @@ import numpy as np
 np.random.seed(123499)
 
 class FAServerPEM():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
         """_summary_
 
         Args:
@@ -16,7 +16,7 @@ class FAServerPEM():
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
             round (int): running rounds
             clients (list): clients' items, one client has one data, default = []
             C_truth (list): truth ordered top-k items, default = []
@@ -28,7 +28,7 @@ class FAServerPEM():
         self.m = m
         self.k = k
         self.varepsilon = varepsilon
-        self.batch_size = batch_size
+        self.iterations = iterations
         self.round = round
         self.clients = clients
         self.evaluate_type = evaluate_type
@@ -96,7 +96,7 @@ class FAServerPEM():
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
@@ -104,11 +104,11 @@ class FAServerPEM():
         C_i = {}
         for i in range(2**s_0):
             C_i[i] = 0
-        group_size = self.n//self.batch_size
-        for i in range(1, self.batch_size+1):
-            s_i = s_0 + ceil(i*(self.m-s_0)/self.batch_size)
-            delta_s = ceil(i*(self.m-s_0)/self.batch_size) - \
-                ceil((i-1)*(self.m-s_0)/self.batch_size)
+        group_size = self.n//self.iterations
+        for i in range(1, self.iterations+1):
+            s_i = s_0 + ceil(i*(self.m-s_0)/self.iterations)
+            delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
+                ceil((i-1)*(self.m-s_0)/self.iterations)
             D_i = {}
             for val in C_i.keys():
                 for offset in range(2**delta_s):
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     init_varepsilon = 0.2
     step_varepsilon = 0.8
     max_varepsilon = 12
-    batch_size =10
+    iterations =10
 
     sampling_rate = 1
     round = 10
@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
 
-    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round,
+    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round,
          privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(

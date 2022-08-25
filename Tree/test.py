@@ -4,7 +4,7 @@ from trie import Trie
 if __name__ == '__main__':
     bit_len = 2
     max_bit_len = 8
-    batch_size = max_bit_len//bit_len
+    iterations = max_bit_len//bit_len
     tree = Trie(bit_len)
     tree.insert(8, 2)
     tree.insert(1, 2)

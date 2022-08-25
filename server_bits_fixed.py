@@ -26,14 +26,14 @@ class FAServer(FAServerPEM):
             m (int): binary-string length
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
-            batch_size (int): number of groups
+            iterations (int): number of groups
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         
-        adder_base = ceil((2*self.n)/(self.batch_size*(self.batch_size+1)))
+        adder_base = ceil((2*self.n)/(self.iterations*(self.iterations+1)))
 
-        bits_per_batch = ceil(self.m / self.batch_size)
+        bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         C_i = {}
@@ -41,7 +41,7 @@ class FAServer(FAServerPEM):
         
 
 
-        for i in range(self.batch_size):
+        for i in range(self.iterations):
 
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     init_varepsilon = 0.1
     step_varepsilon = 0.1
     max_varepsilon = 1.6
-    batch_size = 16
+    iterations = 16
 
     sampling_rate = 1
     round = 5
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.predict_heavy_hitters()
     server.server_run_plot_varepsilon(
