@@ -38,9 +38,9 @@ class ServerState(object):
 
 class SimulateTrieHH(FAServerPEM):
     """Simulation for TrieHH."""
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], \
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], C_truth: List = [],\
             evaluate_type='F1', delta=2.3e-12, encoding="ascii", theta = None):
-        super().__init__(n, m, k, varepsilon, batch_size, round, clients, evaluate_type=evaluate_type)
+        super().__init__(n, m, k, varepsilon, batch_size, round, clients, C_truth=C_truth, evaluate_type=evaluate_type)
 
         # super().__init__(self)
         

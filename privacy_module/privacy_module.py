@@ -79,7 +79,7 @@ class PrivacyModule(PrivacyModuleABC):
     
     def __handle_GRR_weight_response(self):
         def __handle_GRR_weight_response_(responses):
-            weight = weight_score(len(responses), self.varepsilon, self.d)
+            weight = weight_score(len(responses), self.varepsilon, self.d, self.batch)
             for response in responses:
                 self.D[response] = self.D.get(response, 0) + weight
             return self.D

@@ -62,9 +62,6 @@ class FAServer(FAServerPEM):
             # adder = (i+1)*adder_base
             adder = int(self.n/self.batch_size)
             
-            # if i < 1/3*self.batch_size:
-            #     adder = batch_size*adder_base
-            # adder = clients_participating[i]
 
             print(f"Sampling {adder} clients")
             for client in random.choices(self.clients, k=adder):

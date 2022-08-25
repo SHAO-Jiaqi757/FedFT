@@ -7,13 +7,10 @@ Returns:
 from math import ceil, log
 import random
 from typing import Dict, List
-
+from utils import load_clients
 from privacy_module import PrivacyModule
 from server import FAServerPEM
-from server_tree_weighted import FAServer
-from triehh import SimulateTrieHH
 
-from utils import plot_all_in_one, visualize_frequency, weight_score
 
 
 random.seed(0)
@@ -55,7 +52,7 @@ class ServerWeightClientSize(FAServerPEM):
 
             # self.varepsilon = varepsilons[i]
             # print("Privacy mechanism type:", self.privacy_mechanism_type)
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
+            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i+1, bits_per_batch=bits_per_batch)
             # mechanism = privacy_mechanism(
             #     self.varepsilon, D_i, self.privacy_mechanism_type)
             mechanism = privacy_module.privacy_mechanism()
@@ -63,12 +60,6 @@ class ServerWeightClientSize(FAServerPEM):
             clients_responses = []
 
             adder = (i+1)*adder_base
-            # adder = int(self.n/self.batch_size)
-            
-            # if i < 1/3*self.batch_size:
-            #     adder = batch_size*adder_base
-            # adder = clients_participating[i]
-
             print(f"Sampling {adder} clients")
             for client in random.choices(self.clients, k=adder):
                 prefix_client = client >> (self.m-s_i)
@@ -93,58 +84,29 @@ class ServerWeightClientSize(FAServerPEM):
 
 if __name__ == '__main__':
     n = 10000
-
-    m = 32
+    
+    m = 4*10
     k = 8
     init_varepsilon = 0.2
     step_varepsilon = 0.8
     max_varepsilon = 12
-    batch_size = 8
+    batch_size =10
 
     sampling_rate = 1
     round = 10
 
+    truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
+    # truth_top_k =[], clients = []
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     # ----Weight Tree & Client Size fitting---- # 
-    server = ServerWeightClientSize(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = ServerWeightClientSize(n, m, k, init_varepsilon, batch_size, round, clients=clients, C_truth = truth_top_k, \
+        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
 
     xc, yc = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
     # server.server_run()
 
-   # ----Weight Tree---- # 
-    server = FAServer(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
 
-    # server.server_run()
-    xn, yn = server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-    
-    # ----Standard Tree---- #
-
-    privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        sampling_rate= sampling_rate)
- 
-    x, y = server.server_run_plot_varepsilon(
-    init_varepsilon,  step_varepsilon, max_varepsilon)
-
-    # ----TrieHH Tree---- #
-    delta = 1/(n**2)
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
-
-    server = SimulateTrieHH(n, m, k, init_varepsilon, batch_size, round, 
-            delta=delta, evaluate_type=evaluate_module_type)
-    # server.server_run()
-    x_triehh, y_triehh = server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-
-
-    ## Visualize Comparison ##
-    xs = [xc, xn, x, x_triehh]
-    ys = [yc, yn, y, y_triehh]
-
-    plot_all_in_one(xs, ys, "privacy budget", "F1", "Compare with using incremental client_size", [ "Weight Tree & Client Size fitting", "Weight Tree", "Standard Tree", "TrieHH"] )

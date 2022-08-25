@@ -8,13 +8,11 @@ from privacy_module.privacy_module_abc import PrivacyModuleABC
 from utils import weight_score
 
 class PEMPrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", bits_per_batch=-1, batch=-1):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR"):
         self.varepsilon = varepsilon
         self.D = D
         self.type = type
         self.D_keys = sorted(list(D.keys()))
-        self.bits_per_batch = bits_per_batch
-        self.batch = batch
 
     def privacy_mechanism(self) -> callable:
         """_summary_
@@ -78,7 +76,7 @@ class PEMPrivacyModule(PrivacyModuleABC):
         """
         def GRR_(v: int):
             if v not in self.D:
-                print(f"{v} not in D")
+                # print(f"{v} not in D")
                 return
 
             prob = random.random()

@@ -1,5 +1,4 @@
-from math import exp, log
-import os
+from math import exp, log, sqrt
 import pickle
 import sys
 import random
@@ -7,6 +6,7 @@ import time
 from typing import Dict, List
 from matplotlib import pyplot as plt
 import numpy as np
+from Cipher import *
 
 random.seed(time.time_ns())
 
@@ -47,20 +47,32 @@ def plot_all_in_one(x_list: List[List], y_list: List[List], x_label: str, y_labe
     plt.title(title)
     plt.savefig(f"{title}_{time.time_ns()}.png")
     
+def pr_N_mostFrequentNumber(arr, K):
+ 
+    mp = {}
+    for i in range(len(arr)):
+        if arr[i] in mp:
+            mp[arr[i]] += 1
+        else:
+            mp[arr[i]] = 1
+    
+    a = sorted(mp.items(), key=lambda x: x[1],
+               reverse=True)[:K]
 
-
+    top_k = [x[0] for x in a]
+    return top_k
 
 def var(n, varepsilon, d: int):
 
     # print(self.varepsilon, d)
     p = exp(varepsilon) / (exp(varepsilon)+d-1)
-    q = (1-p)/d 
+    q = (1-p)/(d-1)
     # return p*log(p) + q*log(q)
     var_ = n*q*(1-q)/((p-q)**2)
     return var_
 
 
-def weight_score(n: int, varepsilon: float, d: int) -> float:
+def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
     """_summary_
 
     Args:
@@ -71,7 +83,16 @@ def weight_score(n: int, varepsilon: float, d: int) -> float:
     Returns:
         float: weight
     """
-    return 1/var(n, varepsilon, d)
+
+    # weight_score_ = 1/var(n, varepsilon, d)
+    p = exp(varepsilon) / (exp(varepsilon)+d-1) 
+    q = (1-p)/(d-1)
+
+    weight_score_ = log(n)*p
+    # weight_score_ = 1
+    print("weight_score:", weight_score_)
+    return weight_score_
+
 
 def decode_result(self, result: List) -> List:
     for idx, number in enumerate(result):
@@ -81,6 +102,21 @@ def decode_result(self, result: List) -> List:
         result[idx] = int.to_bytes(number, byteorder="little", length=nbytes).decode(self.encoding)
     return result
 
+
+
+def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize):
+    with open(filename, 'rb') as f:
+        clients = pickle.load(f)
+    truth_top_k = pr_N_mostFrequentNumber(clients, k)
+
+    for i in range(len(clients)):
+        number = encode_word(clients[i])
+        clients[i] = number 
+    for i in range(len(truth_top_k)):
+        number = encode_word(truth_top_k[i])
+        truth_top_k[i] = number 
+     
+    return truth_top_k, clients
 
 if __name__ == '__main__':
     xs = [[i for i in range(10)] for _ in range(2)]
