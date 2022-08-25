@@ -29,14 +29,10 @@ class PrivacyModule(PrivacyModuleABC):
         """
 
         if self.type == "GRR" or self.type =="GRR_Weight":
-            if not self.D:
-                raise Exception("Dict is required for GRR")
 
-            # print(self.varepsilon, d)
             p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d-1)
 
             # print(f"Generate Random Response Probability: {p}")
-
             return self.__GRR(p)
         elif self.type == "None":
             return lambda x: x

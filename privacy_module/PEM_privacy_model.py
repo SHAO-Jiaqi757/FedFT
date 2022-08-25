@@ -11,6 +11,7 @@ class PEMPrivacyModule(PrivacyModuleABC):
     def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR"):
         self.varepsilon = varepsilon
         self.D = D
+        self.d = len(D)
         self.type = type
         self.D_keys = sorted(list(D.keys()))
 
@@ -26,10 +27,7 @@ class PEMPrivacyModule(PrivacyModuleABC):
 
         if self.type == "GRR" or self.type =="GRR_Weight":
   
-                # self.D = {0:0, 1:0}
-
-            d = len(self.D)
-            p = exp(self.varepsilon) / (exp(self.varepsilon)+d)
+            p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d)
 
             # print(f"Generate Random Response Probability: {p}")
 
