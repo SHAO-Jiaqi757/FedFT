@@ -2,13 +2,13 @@ from math import ceil, log
 from typing import Dict, List
 from privacy_module import PEMPrivacyModule
 from evaluate_module import EvaluateModule
-from utils import plot_single_line, sort_by_frequency, visualize_frequency
+from utils import plot_single_line, sort_by_frequency
 import numpy as np
 
 np.random.seed(123499)
 
 class FAServerPEM():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, batch_size: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", sampling_rate: float = 1):
         """_summary_
 
         Args:
@@ -17,8 +17,11 @@ class FAServerPEM():
             k (int): top-k heavy hitters
             varepsilon (float): privacy budget
             batch_size (int): number of groups
-            round (int): running round
-            evaluate_type: evaluate function to estimate performance (NDCG or F1)
+            round (int): running rounds
+            clients (list): clients' items, one client has one data, default = []
+            C_truth (list): truth ordered top-k items, default = []
+            privacy_mechanism_type (str): local differential privacy mechanism. default is GRR (options: GRR, OUE, GRR_Weight, None)
+            evaluate_type (str): evaluate function to estimate performance (NDCG or F1)
         """
         self.n = n
         self.sampling_rate = sampling_rate
@@ -38,8 +41,11 @@ class FAServerPEM():
 
         if not self.clients:
             self.__init_clients()
-        self.C_truth = sort_by_frequency(self.clients, self.k)
-        
+        else:
+            self.n = len(self.clients)
+        if not C_truth:
+            self.C_truth = sort_by_frequency(self.clients, self.k)
+        else: self.C_truth = C_truth
 
     def __init_privacy_mechanism(self, privacy_mechanism_type: str):
         self.privacy_mechanism_type = privacy_mechanism_type if privacy_mechanism_type in self.__available_privacy_mechanism_type else "GRR"
@@ -114,7 +120,7 @@ class FAServerPEM():
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
-
+            
             for client in self.clients[(i-1)*group_size: (i)*group_size]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
@@ -166,25 +172,27 @@ class FAServerPEM():
 
 
 if __name__ == '__main__':
-    n = 1000
+    n = 10000
 
-    m = 16
-    k = 9
+    m = 4*10
+    k = 8
     init_varepsilon = 0.2
-    step_varepsilon = 0.3
+    step_varepsilon = 0.8
     max_varepsilon = 12
-    batch_size = 9
+    batch_size =10
 
     sampling_rate = 1
-    round = 20 
+    round = 10
+
+    evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
-    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+    server = FAServerPEM(n, m, k, init_varepsilon, batch_size, round,
+         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         sampling_rate= sampling_rate)
     server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 
-    visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
+    # visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
     
