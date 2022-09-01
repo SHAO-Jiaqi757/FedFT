@@ -37,7 +37,7 @@ def plot_single_line(x_list: List[float], y_list: List[float], x_label: str, y_l
 
 def plot_all_in_one(x_list: List[List], y_list: List[List], x_label: str, y_label: str, title: str, labels: List) -> None:
     
-    plt.figure(3)
+    plt.figure()
     for x, y, label in zip(x_list, y_list, labels):
         # print(x, y)
         plt.plot(x, y, label=label)
@@ -86,11 +86,11 @@ def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
 
     # weight_score_ = 1/var(n, varepsilon, d)
     p = exp(varepsilon) / (exp(varepsilon)+d-1) 
-    q = (1-p)/(d-1)
-
-    weight_score_ = log(n)*p
+    # q = (1-p)/(d-1)
+    # print(n, p)
+    weight_score_ = log(n+1)*p
     # weight_score_ = 1
-    print("weight_score:", weight_score_)
+    # print("weight_score:", weight_score_)
     return weight_score_
 
 

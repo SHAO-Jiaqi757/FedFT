@@ -32,8 +32,8 @@ class EvaluateModule(EvaluateModuleABC):
         not_hit = 0
 
         
-        for hitter in truth_top_k:
-            if hitter in estimate_top_k: hit += 1
+        for hitter in estimate_top_k:
+            if hitter in truth_top_k: hit += 1
             else: not_hit += 1
 
         f1 = 2*hit/(2*hit + not_hit)

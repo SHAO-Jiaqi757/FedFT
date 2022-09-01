@@ -6,7 +6,7 @@ from evaluate_module import EvaluateModule
 from utils import plot_single_line, sort_by_frequency
 import numpy as np
 
-np.random.seed(123499)
+# np.random.seed(0)
 
 class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", connection_loss_rate: float = 0):
@@ -40,11 +40,11 @@ class FAServerPEM():
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
-        if not self.clients:
+        if not len(self.clients):
             self.__init_clients()
         else:
             self.n = len(self.clients)
-        if not C_truth:
+        if not len(C_truth):
             self.C_truth = sort_by_frequency(self.clients, self.k)
         else: self.C_truth = C_truth
 
@@ -55,6 +55,7 @@ class FAServerPEM():
     def __init_clients(self):
         type = input(
             f"simulate client data with ___ distribution {self.__available_data_distribution}: ")
+        type = type.strip()
         if type not in self.__available_data_distribution:
             print("Invalid distribution type:: Default distribution will be 'poisson'")
             type = "poisson"
@@ -65,7 +66,7 @@ class FAServerPEM():
         if mu is None and var is None:
 
             mu = float(input("mean:"))
-
+        print(f"Generate {self.n} clients with [Poisson (mu={mu}]")
         clients = np.random.poisson(mu, self.n)
         self.clients = clients
 
@@ -75,6 +76,7 @@ class FAServerPEM():
             low = int(input("low:"))
             high = int(input("high:"))
 
+        print(f"Generate {self.n} clients with [Uniform ({low}, {high})]")
         clients = np.random.randint(low, high, self.n)
         clients = np.absolute(clients.astype(int))
         self.clients = clients

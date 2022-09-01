@@ -62,7 +62,7 @@ class FAServerPreHashing(FAServerPEM):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 # clients_responses.append(response)
-                p = random() 
+                p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
 

@@ -14,7 +14,7 @@ from server import FAServerPEM
 from utils import plot_all_in_one, visualize_frequency, weight_score
 
 
-random.seed(0)
+# random.seed(0)
 
 class FAServer(FAServerPEM):
 
@@ -68,7 +68,7 @@ class FAServer(FAServerPEM):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 # clients_responses.append(response)
-                p = random() 
+                p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
      

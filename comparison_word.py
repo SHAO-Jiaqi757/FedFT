@@ -3,12 +3,12 @@ This experiment used to compare different models.
 Returns:
     _type_: _description_
 """
-from server_weighted_clientsize import ServerWeightClientSize
+from server_FedFT import FedFTServer
 from server import FAServerPEM
 from server_tree_weighted import FAServer
 from triehh import SimulateTrieHH
 from Cipher import *
-from utils import plot_all_in_one, load_clients
+from utils import plot_all_in_one, load_clients, visualize_frequency
 
 
 
@@ -16,16 +16,16 @@ from utils import plot_all_in_one, load_clients
 if __name__ == '__main__':
     n = 2000
 
-    m = 64
+    m = 20
     k = 8
     init_varepsilon = 0.2
-    step_varepsilon = 0.8
+    step_varepsilon = 0.5
     max_varepsilon = 12
     iterations = 32
 
     round = 10
 
-    truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
+    truth_top_k, clients = load_clients(filename="./dataset/triehh_clients.txt", k=k)
     # truth_top_k =[]
     # clients = []
 
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     # ----Weight Tree & Client Size fitting---- # 
-    server = ServerWeightClientSize(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
+    server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type
         )
 
@@ -75,3 +75,4 @@ if __name__ == '__main__':
     ys = [yc, yn, y, y_triehh]
 
     plot_all_in_one(xs, ys, "privacy budget", "F1", "Compare with using incremental client_size", [ "Weight Tree & Client Size fitting", "Weight Tree", "Standard Tree", "TrieHH"] )
+    

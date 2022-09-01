@@ -7,15 +7,16 @@ Returns:
 from math import ceil, log
 import random
 from typing import Dict, List
-from utils import load_clients
+from utils import load_clients, sort_by_frequency, visualize_frequency
 from privacy_module import PrivacyModule
 from server import FAServerPEM
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 random.seed(0)
 
-class ServerWeightClientSize(FAServerPEM):
+class FedFTServer(FAServerPEM):
 
     def predict_heavy_hitters(self) -> Dict:
         """_summary_
@@ -64,7 +65,7 @@ class ServerWeightClientSize(FAServerPEM):
             for client in random.choices(self.clients, k=adder):
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                p = random() 
+                p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
 
@@ -85,29 +86,40 @@ class ServerWeightClientSize(FAServerPEM):
 
 
 if __name__ == '__main__':
-    n = 10000
+    n = 2000
     
-    m = 4*10
+    m = 64
     k = 8
     init_varepsilon = 0.2
     step_varepsilon = 0.8
     max_varepsilon = 12
-    iterations =10
+    iterations =32
 
     round = 10
 
-    truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
-    # truth_top_k =[], clients = []
+    # truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
+    truth_top_k =[]
+    clients = []
     privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     # ----Weight Tree & Client Size fitting---- # 
-    server = ServerWeightClientSize(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
+    server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
         )
 
-    xc, yc = server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
+    # xc, yc = server.server_run_plot_varepsilon(
+    #     init_varepsilon,  step_varepsilon, max_varepsilon)
     # server.server_run()
+    # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
+    top50 = sort_by_frequency(server.clients)[:50]
+    top50_x = [f"{x}" for x in top50]
+
+    bincounts = np.bincount(server.clients)
+
+    y = bincounts[top50]
+    plt.xticks(rotation=90)
+    plt.plot(top50_x, y)
+    plt.show()
 
 

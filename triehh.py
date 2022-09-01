@@ -26,9 +26,8 @@ import numpy as np
 from typing import List
 
 from server import FAServerPEM
-from utils import plot_single_line
+from utils import plot_single_line, load_clients
 
-np.random.seed(123499)
 
 class ServerState(object):
     def __init__(self):
@@ -60,6 +59,7 @@ class SimulateTrieHH(FAServerPEM):
         
         self._set_client_per_batch()
 
+        print(f"VVR={self.clients_per_batch/self.theta:2f}")
         
         if self.msg_counts < self.bit_len: # make true the first round goes.
             self.msg_counts = self.bit_len
@@ -89,10 +89,9 @@ class SimulateTrieHH(FAServerPEM):
         p = random.random()
         if p < self.connection_loss_rate:
             return 0
-            
+
         if self.trie_total_bits-self.bit_len == 0:  # trie initial state
             return 1
-        # pre = number & ((1 << (self.trie_total_bits-self.bit_len))- 1) #TODO:
         pre = number >> (self.m - self.trie_total_bits + self.bit_len)
         if (pre not in self.server_state.trie.get(self.trie_total_bits-self.bit_len, {})):
             return 0
@@ -112,7 +111,7 @@ class SimulateTrieHH(FAServerPEM):
         for number in voters:
             vote_result = self.client_vote(number)
 
-            pre = number >> (self.m-self.trie_total_bits) #TODO:
+            pre = number >> (self.m-self.trie_total_bits) 
             votes[self.trie_total_bits] = votes.get(self.trie_total_bits, {})
             votes[self.trie_total_bits][pre] = votes[self.trie_total_bits].get(pre, 0) + vote_result
             # votes[pre] += vote_result
@@ -203,22 +202,31 @@ class SimulateTrieHH(FAServerPEM):
 
         self._set_theta()
         self._set_client_per_batch()
+        print(f"[privacy budget={self.varepsilon}]::VVR={self.clients_per_batch/self.theta:2f}")
 
 if __name__ == '__main__':
     n = 10000
 
-    m = 32
+    m = 64
     k = 8
-    init_varepsilon = 2
-    step_varepsilon = 0.3
+    init_varepsilon = 0.2
+    step_varepsilon = 0.7
     max_varepsilon = 12
-    iterations =8 
+    iterations = 32
 
-    round = 2 
+    round = 10
+
+    client_size = 99411
+    # save_path_dir = f"./results/connectionloss_{client_size}"
+    truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients.txt", k=k)
+
     delta = 1/(n**2)
+
+    
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
-    server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, 
+    server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, \
+        clients=clients, C_truth=truth_top_k,
             delta=delta, evaluate_type=evaluate_module_type)
     # server.server_run()
     server.server_run_plot_varepsilon(
