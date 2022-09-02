@@ -6,7 +6,7 @@ from evaluate_module import EvaluateModule
 from utils import plot_single_line, sort_by_frequency
 import numpy as np
 
-# np.random.seed(0)
+np.random.seed(0)
 
 class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", connection_loss_rate: float = 0):
@@ -111,6 +111,8 @@ class FAServerPEM():
             s_i = s_0 + ceil(i*(self.m-s_0)/self.iterations)
             delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
                 ceil((i-1)*(self.m-s_0)/self.iterations)
+
+            print("[PEM] bits/iter:", delta_s)
             D_i = {}
             for val in C_i.keys():
                 for offset in range(2**delta_s):

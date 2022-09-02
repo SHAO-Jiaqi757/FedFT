@@ -29,14 +29,21 @@ if __name__ == '__main__':
 
     connection_loss_rate = 0
 
-    # client_size = 2716
-    # save_path_dir = f"./results/connectionloss_{client_size}"
-    # truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients_remove_top5_{client_size}.txt", k=k)
+    is_generate_clients = False
 
-    save_path_dir = ''
-    truth_top_k =[]
-    clients = []
-    client_distribution_type = ""
+    if is_generate_clients:
+        save_path_dir = ''
+        truth_top_k =[]
+        clients = []
+        client_distribution_type = ""
+
+    else:
+        n = 9004
+        save_path_dir = f"./results/connectionloss_{n}"  # result path 
+        truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients_remove_top5_{n}.txt", k=k)  # load clients from .txt
+
+    
+   
     while connection_loss_rate < 0.7:
         privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
         evaluate_module_type = "F1" # ["NDCG", "F1"]
@@ -45,11 +52,14 @@ if __name__ == '__main__':
         server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
             privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate)
 
-        truth_top_k = server.C_truth[:]
-        clients = server.clients[:]
-        if not client_distribution_type:
-            client_distribution_type = server.client_distribution_type
-        save_path_dir = f'./results/{client_distribution_type}_{1.5}_{server.n}'
+        if is_generate_clients:
+            truth_top_k = server.C_truth[:]
+            clients = server.clients[:]
+
+            if not client_distribution_type:
+                client_distribution_type = server.client_distribution_type
+
+            save_path_dir = f'./results/{client_distribution_type}_{100}_{server.n}'  # should mannually changed
 
         xc, yc = server.server_run_plot_varepsilon(
             init_varepsilon,  step_varepsilon, max_varepsilon)

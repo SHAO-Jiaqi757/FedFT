@@ -29,14 +29,11 @@ class EvaluateModule(EvaluateModuleABC):
             return 0
 
         hit = 0
-        not_hit = 0
 
-        
-        for hitter in estimate_top_k:
+        for hitter in estimate_top_k: 
             if hitter in truth_top_k: hit += 1
-            else: not_hit += 1
 
-        f1 = 2*hit/(2*hit + not_hit)
+        f1 = 2*hit/(len(estimate_top_k)+len(truth_top_k))
         return f1
 
     def __DCG(self,estimate_top_k: List, rel:Dict) -> float:

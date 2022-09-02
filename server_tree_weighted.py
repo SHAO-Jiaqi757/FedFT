@@ -52,7 +52,7 @@ class FAServer(FAServerPEM):
 
             # self.varepsilon = varepsilons[i]
             # print("Privacy mechanism type:", self.privacy_mechanism_type)
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
+            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i+1, bits_per_batch=bits_per_batch)
             # mechanism = privacy_mechanism(
             #     self.varepsilon, D_i, self.privacy_mechanism_type)
             mechanism = privacy_module.privacy_mechanism()
