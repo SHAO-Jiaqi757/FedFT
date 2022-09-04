@@ -88,7 +88,7 @@ def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
     p = exp(varepsilon) / (exp(varepsilon)+d-1) 
     # q = (1-p)/(d-1)
     # print(n, p)
-    weight_score_ = log(n+1)*p
+    weight_score_ = log(n+batch)*p
     # weight_score_ = 1
     # print("weight_score:", weight_score_)
     return weight_score_

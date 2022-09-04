@@ -21,15 +21,15 @@ if __name__ == '__main__':
     m = 64
     k = 8
     init_varepsilon = 0.2
-    step_varepsilon = 0.8
-    max_varepsilon = 12
-    iterations = 32
+    step_varepsilon = 0.5
+    max_varepsilon = 9
+    iterations = 16
 
-    round = 10
+    round = 20
 
     connection_loss_rate = 0
 
-    is_generate_clients = False
+    is_generate_clients = True
 
     if is_generate_clients:
         save_path_dir = ''
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         client_distribution_type = ""
 
     else:
-        n = 9004
+        n = 90740
         save_path_dir = f"./results/connectionloss_{n}"  # result path 
         truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients_remove_top5_{n}.txt", k=k)  # load clients from .txt
 
