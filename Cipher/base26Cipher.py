@@ -46,17 +46,29 @@ def encode_word(word):
 def decode_word(number):
     decoder = load_decoder()
     result = ""
-    while number % BASE:
-        result = decoder[f'{number % BASE}'] + result 
-        number = number // BASE
+    while number // BASE or number % (BASE):
+        letter_code = number % (BASE)
+        number = number // (BASE)
+        if letter_code == 0:
+            number -= 1
+            letter_code += 1*26
+        result = decoder[str(letter_code)] + result 
+        
     return result
 
 
 if __name__ == '__main__':
-    word = "hello"
+    # obj = {}
+    # for x in range(26):
+        
+    #     obj[chr(x+ord("a"))] = x+1
+    #     obj[chr(x+ord("A"))] = x+1
+
+    # save_to_json(obj, "./Cipher/base26encoder.json")
+
+    word = "az"
+
     number = encode_word(word)
-
     print(decode_word(number) == word)
-
     
 
