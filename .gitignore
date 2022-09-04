@@ -5,5 +5,4 @@ __pycache__
 *.png
 *.txt
 *.csv
-*.json
 results
