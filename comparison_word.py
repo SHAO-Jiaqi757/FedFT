@@ -5,7 +5,7 @@ Returns:
 """
 from server_FedFT import FedFTServer
 from server import FAServerPEM
-from server_tree_weighted import FAServer
+from server_WT import WTServer
 from triehh import SimulateTrieHH
 from Cipher import *
 from utils import plot_all_in_one, load_clients, visualize_frequency
@@ -16,21 +16,21 @@ from utils import plot_all_in_one, load_clients, visualize_frequency
 if __name__ == '__main__':
     n = 2000
 
-    m = 20
+    m = 8
     k = 8
     init_varepsilon = 0.2
     step_varepsilon = 0.5
-    max_varepsilon = 12
-    iterations = 32
+    max_varepsilon = 9 
+    iterations = 4
 
     round = 10
 
-    truth_top_k, clients = load_clients(filename="./dataset/triehh_clients.txt", k=k)
-    # truth_top_k =[]
-    # clients = []
+    # truth_top_k, clients = load_clients(filename="./dataset/triehh_clients.txt", k=k)
+    truth_top_k =[]
+    clients = []
 
-    privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
+    privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
+    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
     # ----Weight Tree & Client Size fitting---- # 
     server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # server.server_run()
    
    # ----Weight Tree---- # 
-    server = FAServer(n, m, k, init_varepsilon, iterations, round,clients=clients, C_truth=truth_top_k, 
+    server = WTServer(n, m, k, init_varepsilon, iterations, round,clients=clients, C_truth=truth_top_k, 
     privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type
         )
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # ----TrieHH Tree---- #
     delta = 1/(n**2)
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
+    # evaluate_module_type = "NDCG" # ["NDCG", "F1"]
 
     server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,  
             delta=delta, evaluate_type=evaluate_module_type)
@@ -74,5 +74,5 @@ if __name__ == '__main__':
     xs = [xc, xn, x, x_triehh]
     ys = [yc, yn, y, y_triehh]
 
-    plot_all_in_one(xs, ys, "privacy budget", "F1", "Compare with using incremental client_size", [ "Weight Tree & Client Size fitting", "Weight Tree", "Standard Tree", "TrieHH"] )
+    plot_all_in_one(xs, ys, "privacy budget", evaluate_module_type, "Compare with using incremental client_size", ["FedFT", "Weight Tree", "Standard Tree", "TrieHH"] )
     

@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     round = 1
 
-    privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
+    privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     server = FAServer(n, m, k, init_varepsilon, iterations, round, privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type)

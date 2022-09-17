@@ -67,7 +67,7 @@ class EvaluateModule(EvaluateModuleABC):
         truth_top_k = truth_top_k[:top_k]
         rel = {}
         for number in truth_top_k:
-            rel[number] = top_k 
+            rel[number] = log(top_k)
             top_k-=1
             
         return self.__DCG(estimate_top_k, rel) / self.__DCG(truth_top_k, rel)

@@ -17,9 +17,20 @@ def visualize_frequency(array, truth_top_k_heavy_hitters, distribution_type, k=s
     plt.figure()
     plt.xlabel("data value")
     plt.ylabel("count")
-    bin, _, _ = plt.hist(array[:k], bins=len(np.bincount(array)), rwidth=0.9)
+    
+    array_max = array.max()
+    array_min = array.min()
+    
+    bins = np.bincount(array)
+
+    points = [(x, bins[x]) for x in array]
+    plt.xlim(array_min, array_max)
+
+    for pt in points:
+        plt.plot([pt[0], pt[0]], [0, pt[1]], 'grey')
     for k in truth_top_k_heavy_hitters:
-        plt.text(k, bin[k], f"{k}", fontsize="x-small")
+        plt.text(k, bins[k], f"{k}", fontsize="x-small")
+
     plt.title(f"Frequency Distribution under {distribution_type}")
     plt.savefig(f"truth_frequency_{time.time_ns()}.png")
 
@@ -88,9 +99,9 @@ def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
     p = exp(varepsilon) / (exp(varepsilon)+d-1) 
     # q = (1-p)/(d-1)
     # print(n, p)
-    weight_score_ = log(n+batch)*p
+    weight_score_ = exp(batch)*n
     # weight_score_ = 1
-    # print("weight_score:", weight_score_)
+    print(f"batch:: {batch}, weight_score:", weight_score_)
     return weight_score_
 
 
@@ -104,11 +115,14 @@ def decode_result(self, result: List) -> List:
 
 
 
-def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize):
+def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, encode=True):
     with open(filename, 'rb') as f:
         clients = pickle.load(f)
     truth_top_k = pr_N_mostFrequentNumber(clients, k)
 
+    if not encode:
+        return truth_top_k, clients
+        
     for i in range(len(clients)):
         number = encode_word(clients[i])
         clients[i] = number 

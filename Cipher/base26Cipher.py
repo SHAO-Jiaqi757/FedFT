@@ -58,15 +58,8 @@ def decode_word(number):
 
 
 if __name__ == '__main__':
-    # obj = {}
-    # for x in range(26):
-        
-    #     obj[chr(x+ord("a"))] = x+1
-    #     obj[chr(x+ord("A"))] = x+1
 
-    # save_to_json(obj, "./Cipher/base26encoder.json")
-
-    word = "az"
+    word = "hello"
 
     number = encode_word(word)
     print(decode_word(number) == word)

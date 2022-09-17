@@ -9,14 +9,15 @@ from utils import weight_score
 
 random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", bits_per_batch=-1, batch=-1):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, batch=-1, WT = False):
         self.varepsilon = varepsilon
         self.D = D
-        self.d = len(self.D) + 1
+        self.d = len(self.D)
         self.type = type
         self.D_keys = sorted(list(D.keys()))
-        self.bits_per_batch = bits_per_batch
+        self.s_i = s_i
         self.batch = batch
+        self.WT = WT
 
     def privacy_mechanism(self) -> callable:
         """_summary_
@@ -28,24 +29,22 @@ class PrivacyModule(PrivacyModuleABC):
             callable: privacy mechanism with given type 
         """
 
-        if self.type == "GRR" or self.type =="GRR_Weight":
-
+        if self.type == "GRR":
             p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d-1)
 
             # print(f"Generate Random Response Probability: {p}")
             return self.__GRR(p)
+        elif self.type == "GRR_X":
+            self.d +=1 
+            p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d-1)
+            return self.__GRR_X(p)
+
         elif self.type == "None":
             return lambda x: x
         elif self.type == "OUE":
             return self.__OUE()
-        elif self.type == "PreHashing":
-            if self.bits_per_batch == -1 or self.batch == -1:
-                raise Exception("`bits_per_batch` and `batch` are required for GRR")
-
-            self.hashing_prefix = lambda v: (v & ((self.bits_per_batch*self.batch) << (self.bits_per_batch-1))) >> self.bits_per_batch
-
-            return self.__PreHashing()
-
+        else:
+            print("Invaild Privacy Type")
 
     def handle_response(self) -> callable:
         """_summary_
@@ -53,34 +52,25 @@ class PrivacyModule(PrivacyModuleABC):
         Returns:
             callable: response handler with given type
         """
-        if self.type == "GRR":
+        if self.type == "GRR" or self.type == "GRR_X":
             return self.__handle_GRR_response()
         elif self.type == "None":
             return self.__handle_GRR_response()
         elif self.type == "OUE":
             return self.__handle_OUE_response()
-        elif self.type == "PreHashing":
-            return self.__handle_PreHashing_response()
-        elif self.type == "GRR_Weight":
-            return self.__handle_GRR_weight_response()
+        else:
+            print("Invaild Privacy Type")
     
     def __handle_GRR_response(self):
         def __handle_GRR_response_(responses):
+            weight = 1 if not self.WT else weight_score(len(responses), self.varepsilon, self.d, self.batch)
             for response in responses:
-                if self.D.get(response, -1) != -1:
-                    self.D[response] += 1
+                if response == None: continue
+                
+                self.D[response] = self.D.get(response, 0) + weight 
             return self.D
 
         return __handle_GRR_response_
-    
-    def __handle_GRR_weight_response(self):
-        def __handle_GRR_weight_response_(responses):
-            weight = weight_score(len(responses), self.varepsilon, self.d, self.batch)
-            for response in responses:
-                self.D[response] = self.D.get(response, 0) + weight
-            return self.D
-
-        return __handle_GRR_weight_response_
     
 
     def __GRR(self, p: float):
@@ -93,20 +83,43 @@ class PrivacyModule(PrivacyModuleABC):
             GRR function with argument v
         """
         def GRR_(v: int):
-           
+            if v not in self.D:
+                return
             prob = random.random()
 
             if prob < p:
                 return v
             else:
                 random_choice_options = list(self.D.keys())
-                if v in random_choice_options:
-                    random_choice_options.append(random.randint(0, 2**(self.batch*self.bits_per_batch))) # randomly select X
-                else:
-                    random_choice_options.append(v) # X = v
-
+                random_choice_options.remove(v)
                 return random.choice(random_choice_options) # random response
         return GRR_
+
+    def __GRR_X(self, p: float):
+        """_summary_
+
+        Args:
+            p (float): probability of replying truth answer
+            d (int): domain size of D
+        Returns: 
+            GRR_X function with argument v
+        """
+        def GRR_X(v: int):
+           
+            prob = random.random()
+
+            if prob < p:
+                response = v    
+            else:
+                random_choice_options = list(self.D.keys())
+                if v in random_choice_options:
+                    random_choice_options.append(random.randint(0, 2**(self.s_i))) # randomly select X
+                else:
+                    random_choice_options.append(v) # X = v
+                response = random.choice(random_choice_options)
+
+            return response # random response
+        return GRR_X
 
 
     def __OUE(self):
@@ -156,41 +169,5 @@ class PrivacyModule(PrivacyModuleABC):
             return self.D
         return __handle_OUE_response_
 
-
-    def __handle_PreHashing_response(self) -> callable:
-        
-        def __handle_PreHashing_response_(responses):
-            valid_responses = {}
-            for response in responses:
-                if response is not None:
-                    if not self.D:
-                        valid_responses[response] = valid_responses.get(response, 0) + 1
-                    else:   
-                        prefix_hash = self.hashing_prefix(response)
-
-                        truth_part = (response & ((1 << self.bits_per_batch)-1))
-                        
-                        for decode_prefix_hash in self.D.get(prefix_hash, []):
-                            response = (decode_prefix_hash << self.bits_per_batch)  + truth_part
-                            valid_responses[response] = valid_responses.get(response, 0) + 1
-            return valid_responses
-
-        return __handle_PreHashing_response_ 
-
-    def __PreHashing(self) -> callable:
-        ...
-        def __PreHashing_(v: int):
-            if not self.D:  # initialize without hashing
-                return v
-            else: 
-
-                prefix_hash = self.hashing_prefix(v)
-                
-                if self.D.get(prefix_hash, -1) != -1:
-                    return (prefix_hash << self.bits_per_batch) + (v & ((1 << self.bits_per_batch)-1))
-                else: 
-                    return None
-
-        return __PreHashing_
 
 

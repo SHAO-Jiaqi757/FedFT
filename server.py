@@ -1,15 +1,17 @@
 from math import ceil, log
-from random import random
+from random import random, uniform
 from typing import Dict, List
-from privacy_module import PEMPrivacyModule
 from evaluate_module import EvaluateModule
-from utils import plot_single_line, sort_by_frequency
+from privacy_module.privacy_module import PrivacyModule
+from utils import load_clients, plot_single_line, sort_by_frequency
 import numpy as np
 
 np.random.seed(0)
 
 class FAServerPEM():
-    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", connection_loss_rate: float = 0):
+    def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
+    clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", 
+    connection_loss_rate: float = 0, WT: bool =False, is_uniform_size: bool=True):
         """_summary_
 
         Args:
@@ -21,8 +23,12 @@ class FAServerPEM():
             round (int): running rounds
             clients (list): clients' items, one client has one data, default = []
             C_truth (list): truth ordered top-k items, default = []
-            privacy_mechanism_type (str): local differential privacy mechanism. default is GRR (options: GRR, OUE, GRR_Weight, None)
+            privacy_mechanism_type (str): local differential privacy mechanism. default is GRR (options: GRR, OUE, GRR_X, None)
             evaluate_type (str): evaluate function to estimate performance (NDCG or F1)
+            connection_loss_rate (float)
+            WT (boolean): is using Weight Trie?
+            is_uniform_size: same size per iteration?
+
         """
         self.n = n
         self.connection_loss_rate = connection_loss_rate
@@ -32,11 +38,14 @@ class FAServerPEM():
         self.iterations = iterations
         self.round = round
         self.clients = clients
+        self.WT = WT
+        self.is_uniform_size  = is_uniform_size
+
         self.evaluate_type = evaluate_type
         self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform"]
-        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE", "PreHashing","GRR_Weight"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE","GRR_X"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -106,32 +115,40 @@ class FAServerPEM():
         C_i = {}
         for i in range(2**s_0):
             C_i[i] = 0
-        group_size = self.n//self.iterations
+        adder_base = int((2*self.n)/((self.iterations*(self.iterations+1)))) 
+        participants = 0
         for i in range(1, self.iterations+1):
             s_i = s_0 + ceil(i*(self.m-s_0)/self.iterations)
             delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
                 ceil((i-1)*(self.m-s_0)/self.iterations)
 
-            print("[PEM] bits/iter:", delta_s)
+            # print("[PEM] bits/iter:", delta_s)
             D_i = {}
             for val in C_i.keys():
                 for offset in range(2**delta_s):
-                    D_i[(val << delta_s) + offset] = 0
+                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
 
-            privacy_module = PEMPrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
-            # mechanism = privacy_mechanism(
-            #     self.varepsilon, D_i, self.privacy_mechanism_type)
+            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i, WT=self.WT, s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
+
+            if self.is_uniform_size : adder = int(self.n/self.iterations)
             
-            for client in self.clients[(i-1)*group_size: (i)*group_size]:
+            else: adder = (i)*adder_base
+            print(f"Sampling {adder} clients")
+            end_participants = participants + adder
+
+            if i == self.iterations:
+                end_participants = self.n-1
+
+            for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-                
                 p = random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
+            participants = end_participants 
 
             D_i = handle_response(clients_responses)
 
@@ -177,28 +194,3 @@ class FAServerPEM():
                          f"{self.evaluate_type}", f"{self.evaluate_type} vs varepsilon", k=self.k)
         return varepsilon_list, evaluate_score_list
 
-
-if __name__ == '__main__':
-    n = 10000
-
-    m = 4*10
-    k = 8
-    init_varepsilon = 0.2
-    step_varepsilon = 0.8
-    max_varepsilon = 12
-    iterations =10
-
-    round = 10
-
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
-
-    privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
-
-    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round,
-         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-        )
-    server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-
-    # visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
-    

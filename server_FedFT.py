@@ -4,6 +4,7 @@ client size is increasing for each batch.
 Returns:
     _type_: _description_
 """
+import pickle
 from math import ceil, log
 import random
 from typing import Dict, List
@@ -30,18 +31,24 @@ class FedFTServer(FAServerPEM):
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
-        
-        adder_base = ceil((2*self.n)/(self.iterations*(self.iterations+1)))
+        stop_iter = 10
 
+
+        # adder_base = int((2*self.n)/(self.iterations*(self.iterations+1)))
+        adder_base = int((2*self.n)/((stop_iter*(stop_iter+1)))) 
+        participants = 0 
         bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         C_i = {}
         C_i[0] = 0 # initial weight_score
-        
+
+     
 
         for i in range(self.iterations):
-
+            if stop_iter-1 < i:
+                print(self.m-s_0)
+                return dict((key<<(self.m-s_0), value) for (key, value) in C_i.items())
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
@@ -49,27 +56,29 @@ class FedFTServer(FAServerPEM):
             D_i = {}
             for val in C_i.keys():
                 for offset in range(2**delta_s):
-                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) if self.privacy_mechanism_type=="GRR_Weight" else 0 # inherit weight_score
+                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
 
-            # self.varepsilon = varepsilons[i]
-            # print("Privacy mechanism type:", self.privacy_mechanism_type)
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i+1, bits_per_batch=bits_per_batch)
-            # mechanism = privacy_mechanism(
-            #     self.varepsilon, D_i, self.privacy_mechanism_type)
+            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i+1, WT=self.WT, s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
-            adder = (i+1)*adder_base
+            if self.is_uniform_size : adder = int(self.n/self.iterations)
+            
+            else: adder = (i+1)*adder_base
             print(f"Sampling {adder} clients")
-            for client in random.choices(self.clients, k=adder):
+            end_participants = participants + adder
+
+            if i == stop_iter-1:
+                end_participants = self.n
+
+            for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
-
-     
+            participants = end_participants
 
             D_i = handle_response(clients_responses)
 
@@ -88,38 +97,38 @@ class FedFTServer(FAServerPEM):
 if __name__ == '__main__':
     n = 2000
     
-    m = 64
-    k = 8
-    init_varepsilon = 0.2
-    step_varepsilon = 0.8
-    max_varepsilon = 12
-    iterations =32
+    m = 20
+    k = 1
+    init_varepsilon = 12
+    step_varepsilon = 0.5
+    max_varepsilon = 9
+    iterations = 10
+    
 
     round = 10
 
-    # truth_top_k, clients = load_clients(filename="./dataset/triehh_clients_remove_top5_9004.txt", k=k)
-    truth_top_k =[]
-    clients = []
-    privacy_mechanism_type = "GRR_Weight" # ["GRR", "None","OUE"]
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
-
+    truth_top_k, clients = load_clients(filename="./dataset/synthetic_steps.txt", k=k, encode=False)
+    # truth_top_k =[]
+    # clients = []
+    privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
+    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
+    WT = True
     # ----Weight Tree & Client Size fitting---- # 
     server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
+            WT = WT
         )
 
-    # xc, yc = server.server_run_plot_varepsilon(
-    #     init_varepsilon,  step_varepsilon, max_varepsilon)
-    # server.server_run()
+    # server.server_run_plot_varepsilon(init_varepsilon, step_varepsilon, max_varepsilon)
     # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
-    top50 = sort_by_frequency(server.clients)[:50]
-    top50_x = [f"{x}" for x in top50]
 
-    bincounts = np.bincount(server.clients)
+    # ----------------------------------------------------------------------------
+    HHs = list(server.predict_heavy_hitters().keys())
+    print("Predict hhs:", HHs)
 
-    y = bincounts[top50]
-    plt.xticks(rotation=90)
-    plt.plot(top50_x, y)
-    plt.show()
+    with open("plural.txt", "wb") as f:
+        pickle.dump([HHs, server.clients], f)
+
+    
 
 

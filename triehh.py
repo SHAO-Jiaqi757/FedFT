@@ -59,7 +59,6 @@ class SimulateTrieHH(FAServerPEM):
         
         self._set_client_per_batch()
 
-        print(f"VVR={self.clients_per_batch/self.theta:2f}")
         
         if self.msg_counts < self.bit_len: # make true the first round goes.
             self.msg_counts = self.bit_len
@@ -202,7 +201,6 @@ class SimulateTrieHH(FAServerPEM):
 
         self._set_theta()
         self._set_client_per_batch()
-        print(f"[privacy budget={self.varepsilon}]::VVR={self.clients_per_batch/self.theta:2f}")
 
 if __name__ == '__main__':
     n = 10000
