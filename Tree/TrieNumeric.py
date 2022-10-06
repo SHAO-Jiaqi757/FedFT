@@ -5,8 +5,9 @@ import json
 
 class TrieNumeric:
     # init Trie class
-    def __init__(self):
+    def __init__(self, bits_in_node):
         self.root = self.getNode()
+        self.bits_in_node = bits_in_node
 
     def getNode(self):
         return { "children": {}}
@@ -20,9 +21,19 @@ class TrieNumeric:
         Returns:
             node: end node
         """
+        
+        if pnode is None:
+            item_len = len(item)
+            if item_len % self.bits_in_node != 0:
+                item = ('0' * ((item_len // 2 + 1)*self.bits_in_node - item_len)) + item
+        else: 
+            print("Inserting item in wrong bit-length!")
+            return pnode
         current =  self.root if not pnode else pnode # parent node
-        for ch in item:
 
+        indx = 0
+        while indx < len(item):
+            ch = item[indx: indx +self.bits_in_node]
             if ch in current['children']:
                 node = current["children"][ch]
             else:
@@ -30,26 +41,33 @@ class TrieNumeric:
                 current["children"][ch] = node
 
             current = node
+            indx += self.bits_in_node
         return current
 
     def search(self, item):
         current = self.root
-        for ch in item:
+        indx = 0 
+        while indx < len(item):
+            ch = item[indx: indx +self.bits_in_node]
             if not ch in current['children']:
                 return False
             node = current["children"][ch]
 
             current = node
+            indx += self.bits_in_node
         return self.is_end(current)
 
     def start_with(self, prefix):
         current = self.root
-        for ch in prefix:
+        indx = 0 
+        while indx < len(prefix):
+            ch = prefix[indx: indx +self.bits_in_node]
             if not ch in current['children']:
                 return False
             node = current["children"][ch]
 
             current = node
+            indx += self.bits_in_node
         # return True if children contain keys and values
         return bool(current["children"])
         
@@ -59,13 +77,16 @@ class TrieNumeric:
     def item_start_with(self, prefix):
 
         current = self.root
-        for ch in prefix:
+        indx = 0
+        while indx < len(prefix):
+            ch = prefix[indx: indx +self.bits_in_node]
             if not ch in current['children']:
                 print(f"[Trie]::[NO] Items start with [{prefix}]")
                 return [] 
             node = current["children"][ch]
 
             current = node
+            indx += self.bits_in_node
         # return True if children contain keys and values
         items_list = []
         print(f'[Trie]::Items start with [{prefix}]')
@@ -87,16 +108,17 @@ class TrieNumeric:
         for ch in cur["children"]:
             self.__display_trie(ch, cur['children'][ch], item, item_list)
 
+
     def delete(self, item):
         self._delete(self.root, item, 0)
 
     def _delete(self, current, item, index):
-        if(index == len(item)):
+        if(index*self.bits_in_node == len(item)):
             if current["children"]:
                 return False
             return self.is_end(current) 
 
-        ch = item[index]
+        ch = item[index*self.bits_in_node: (index+1)*self.bits_in_node]
         if not ch in current['children']:
             return False
         node = current["children"][ch]
@@ -109,33 +131,11 @@ class TrieNumeric:
 
         return False
 
-    def save_to_pickle(self, file_name):
-        f = open(file_name + ".pkl", "wb")
-        pickle.dump(self.root, f)
-        f.close()
-
-    def load_from_pickle(self, file_name):
-        f = open(file_name + ".pkl", "rb")
-        self.root = pickle.load(f)
-        f.close()
-
-    def save_to_json(self, file_name):
-        json_data = json.dumps(self.root)
-        f = open(file_name + ".json", "w")
-        f.write(json_data)
-        f.close()
-
-    def load_from_json(self, file_name):
-        json_file = open(file_name + ".json", "r")
-        self.root = json.load(json_file)
-        json_file.close()
-
-
 if __name__ == '__main__':
-    trie = Trie()
+    trie = TrieNumeric(2)
     pnode = trie.insert('10101')
     # print()
     print(trie.insert('101', pnode))
-    print(trie.insert('11'), pnode)
-    # print(trie.item_start_with())
+    print(trie.insert('111', pnode))
+    
     print(trie.display_trie())

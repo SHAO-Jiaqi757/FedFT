@@ -5,9 +5,9 @@ Returns:
 """
 import os
 import pickle
-from server_FedFT import FedFTServer
+from exp_mode_query import FedFTServer
 from server import FAServerPEM
-from server_WT import WTServer
+from server_FAServer import FAServer
 from triehh import SimulateTrieHH
 from Cipher import *
 from utils import plot_all_in_one, load_clients
@@ -53,24 +53,11 @@ if __name__ == '__main__':
             results["PEM"] = {}
         results["PEM"][connection_loss_rate] = [x_pem, y_pem]
        
-    #    # ---GTU----( GRR + Uniform + Trie) #
-    #     print("------------GTU--------------")
-    #     server = WTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-    #         privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate
-    #     )
-    
-    #     x_gtu, y_gtu = server.server_run_plot_varepsilon(
-    #     init_varepsilon,  step_varepsilon, max_varepsilon)
-
-    #     if "GTU" not in results:
-    #         results["GTU"] = {}
-    #     results["GTU"][connection_loss_rate] = [x_gtu, y_gtu]
-
         
         
         # ----GTF----( GRR + Trie + client_size_fitting ) #
         
-        server = WTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
+        server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
             privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate,
             is_uniform_size=False
         )
@@ -86,7 +73,7 @@ if __name__ == '__main__':
 
         privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
         # ----XTU----( GRR_X + Trie + Uniform size) #
-        server = WTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
+        server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
             privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate
         )
     
@@ -100,7 +87,7 @@ if __name__ == '__main__':
 
     #    ----XTF----( GRR_X + Trie + client_size_fitting) #
 
-        server = WTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
+        server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
             privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate,
             is_uniform_size=False
         )

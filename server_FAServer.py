@@ -4,20 +4,20 @@ client size is increasing for each batch.
 Returns:
     _type_: _description_
 """
-import pickle
 from math import ceil, log
 import random
+from symbol import parameters
 from typing import Dict, List
-from utils import load_clients, sort_by_frequency, visualize_frequency
+
 from privacy_module import PrivacyModule
 from server import FAServerPEM
-import matplotlib.pyplot as plt
-import numpy as np
+
+from utils import plot_all_in_one, visualize_frequency, weight_score
 
 
-random.seed(0)
+# random.seed(0)
 
-class FedFTServer(FAServerPEM):
+class FAServer(FAServerPEM):
 
     def predict_heavy_hitters(self) -> Dict:
         """_summary_
@@ -31,24 +31,15 @@ class FedFTServer(FAServerPEM):
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
-        stop_iter = 10
-
-
-        # adder_base = int((2*self.n)/(self.iterations*(self.iterations+1)))
-        adder_base = int((2*self.n)/((stop_iter*(stop_iter+1)))) 
-        participants = 0 
-        bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
         A_i = {}
         A_i[0] = 0 # initial weight_score
-
-     
+        adder_base = int((2*self.n)/((self.iterations*(self.iterations+1)))) 
+        participants = 0
+        bits_per_batch = ceil(self.m / self.iterations)
 
         for i in range(self.iterations):
-            if stop_iter-1 < i:
-                print(self.m-s_0)
-                return dict((key<<(self.m-s_0), value) for (key, value) in A_i.items())
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
@@ -56,9 +47,11 @@ class FedFTServer(FAServerPEM):
             C_i = {}
             for val in A_i.keys():
                 for offset in range(2**delta_s):
-                    C_i[(val << delta_s) + offset] = A_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
+                    C_i[(val << delta_s) + offset] = 0 # inherit weight_score
+                    # C_i[(val << delta_s) + offset] = 0
 
-            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i+1, WT=self.WT, s_i = s_i)
+
+            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i+1,s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -69,12 +62,13 @@ class FedFTServer(FAServerPEM):
             print(f"Sampling {adder} clients")
             end_participants = participants + adder
 
-            if i == stop_iter-1:
-                end_participants = self.n
+            if i == self.iterations -1:
+                end_participants = self.n-1
 
             for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
+           
                 p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
@@ -90,45 +84,32 @@ class FedFTServer(FAServerPEM):
                 v, count = C_i_sorted[indx]
                 if count > 0:
                     A_i[v] = count
-            # print(f"Group {i} generated: {A_i}")
+                 
+            print(f"Group {i} generated: {A_i}")
+            
         return A_i
 
 
 if __name__ == '__main__':
-    n = 2000
-    
-    m = 20
-    k = 1
-    init_varepsilon = 12
-    step_varepsilon = 0.5
-    max_varepsilon = 9
-    iterations = 10
-    
+    n = 1000
 
-    round = 10
+    m = 16
+    k = 9
+    init_varepsilon = 0.2
+    step_varepsilon = 0.4
+    max_varepsilon = 3
+    iterations = 9
 
-    truth_top_k, clients = load_clients(filename="./dataset/synthetic_steps.txt", k=k, encode=False)
-    # truth_top_k =[]
-    # clients = []
+    round = 20
+
     privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
-    evaluate_module_type = "NDCG" # ["NDCG", "F1"]
-    WT = True
-    # ----Weight Tree & Client Size fitting---- # 
-    server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
+    evaluate_module_type = "F1" # ["NDCG", "F1"]
+    
+    # ----Weight Tree---- # 
+    server = FAServer(n, m, k, init_varepsilon, iterations, round, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, \
-            WT = WT
         )
 
-    # server.server_run_plot_varepsilon(init_varepsilon, step_varepsilon, max_varepsilon)
-    # visualize_frequency(server.clients, server.C_truth, distribution_type=server.client_distribution_type)
-
-    # ----------------------------------------------------------------------------
-    HHs = list(server.predict_heavy_hitters().keys())
-    print("Predict hhs:", HHs)
-
-    with open("plural.txt", "wb") as f:
-        pickle.dump([HHs, server.clients], f)
-
-    
-
-
+    # server.server_run()
+    xn, yn = server.server_run_plot_varepsilon(
+        init_varepsilon,  step_varepsilon, max_varepsilon)

@@ -9,7 +9,7 @@ from utils import weight_score
 
 random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, batch=-1, WT = False):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, batch=-1):
         self.varepsilon = varepsilon
         self.D = D
         self.d = len(self.D)
@@ -17,7 +17,6 @@ class PrivacyModule(PrivacyModuleABC):
         self.D_keys = sorted(list(D.keys()))
         self.s_i = s_i
         self.batch = batch
-        self.WT = WT
 
     def privacy_mechanism(self) -> callable:
         """_summary_
@@ -63,7 +62,7 @@ class PrivacyModule(PrivacyModuleABC):
     
     def __handle_GRR_response(self):
         def __handle_GRR_response_(responses):
-            weight = 1 if not self.WT else weight_score(len(responses), self.varepsilon, self.d, self.batch)
+            weight = 1 
             for response in responses:
                 if response == None: continue
                 
@@ -113,7 +112,9 @@ class PrivacyModule(PrivacyModuleABC):
             else:
                 random_choice_options = list(self.D.keys())
                 if v in random_choice_options:
-                    random_choice_options.append(random.randint(0, 2**(self.s_i))) # randomly select X
+                    X = random.randint(0, 2**(self.s_i))
+                    random_choice_options.append(X) # randomly select X
+
                 else:
                     random_choice_options.append(v) # X = v
                 response = random.choice(random_choice_options)

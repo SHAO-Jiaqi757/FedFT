@@ -110,27 +110,6 @@ class Trie:
 
         return False
 
-    def save_to_pickle(self, file_name):
-        f = open(file_name + ".pkl", "wb")
-        pickle.dump(self.root, f)
-        f.close()
-
-    def load_from_pickle(self, file_name):
-        f = open(file_name + ".pkl", "rb")
-        self.root = pickle.load(f)
-        f.close()
-
-    def save_to_json(self, file_name):
-        json_data = json.dumps(self.root)
-        f = open(file_name + ".json", "w")
-        f.write(json_data)
-        f.close()
-
-    def load_from_json(self, file_name):
-        json_file = open(file_name + ".json", "r")
-        self.root = json.load(json_file)
-        json_file.close()
-
 
 if __name__ == '__main__':
     trie = Trie()
@@ -138,5 +117,5 @@ if __name__ == '__main__':
     # print()
     print(trie.insert("apsdfk"))
     print(trie.insert("abe"))
-    print(trie.item_start_with('ap'))
-    # print(trie.display_trie())
+    print(trie.root)
+    print(trie.display_trie())

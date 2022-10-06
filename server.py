@@ -11,7 +11,7 @@ np.random.seed(0)
 class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
     clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", 
-    connection_loss_rate: float = 0, WT: bool =False, is_uniform_size: bool=True):
+    connection_loss_rate: float = 0, is_uniform_size: bool=True):
         """_summary_
 
         Args:
@@ -26,7 +26,6 @@ class FAServerPEM():
             privacy_mechanism_type (str): local differential privacy mechanism. default is GRR (options: GRR, OUE, GRR_X, None)
             evaluate_type (str): evaluate function to estimate performance (NDCG or F1)
             connection_loss_rate (float)
-            WT (boolean): is using Weight Trie?
             is_uniform_size: same size per iteration?
 
         """
@@ -38,7 +37,6 @@ class FAServerPEM():
         self.iterations = iterations
         self.round = round
         self.clients = clients
-        self.WT = WT
         self.is_uniform_size  = is_uniform_size
 
         self.evaluate_type = evaluate_type
@@ -99,7 +97,7 @@ class FAServerPEM():
             raise ValueError(
                 f"Invalid client distribution type! Available types: {self.__available_data_distribution}")
 
-    def predict_heavy_hitters(self) -> Dict:
+    def predict_heavy_hitters(self, stop_iter=-1) -> Dict:
         """_summary_
 
         Args:
@@ -111,13 +109,20 @@ class FAServerPEM():
         Returns:
             Dict: top-k heavy hitters C_g and their frequencies.
         """
+        if stop_iter == -1: stop_iter = self.iterations # used to accurate in bits (mode query)
+
         s_0 = ceil(log(self.k, 2))
         A_i = {}
         for i in range(2**s_0):
             A_i[i] = 0
-        adder_base = int((2*self.n)/((self.iterations*(self.iterations+1)))) 
+        adder_base = int((2*self.n)/((stop_iter*(stop_iter+1)))) 
         participants = 0
+
         for i in range(1, self.iterations+1):
+            if stop_iter < i:
+                print(self.m-s_i+1)
+                return dict((key<<(self.m-s_0), value) for (key, value) in A_i.items())
+
             s_i = s_0 + ceil(i*(self.m-s_0)/self.iterations)
             delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
                 ceil((i-1)*(self.m-s_0)/self.iterations)
@@ -126,9 +131,9 @@ class FAServerPEM():
             C_i = {}
             for val in A_i.keys():
                 for offset in range(2**delta_s):
-                    C_i[(val << delta_s) + offset] = A_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
+                    C_i[(val << delta_s) + offset] = 0 # inherit weight_score
 
-            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i, WT=self.WT, s_i = s_i)
+            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i, s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -139,8 +144,9 @@ class FAServerPEM():
             print(f"Sampling {adder} clients")
             end_participants = participants + adder
 
-            if i == self.iterations:
-                end_participants = self.n-1
+        
+            if i== stop_iter-1:
+                end_participants = self.n
 
             for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i)
