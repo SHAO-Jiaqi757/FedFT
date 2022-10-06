@@ -1,3 +1,3 @@
 
-from .radixTrie import RadixTrie
+from .TrieNumeric import TrieNumeric
 from .trie import Trie

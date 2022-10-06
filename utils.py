@@ -82,6 +82,10 @@ def var(n, varepsilon, d: int):
     var_ = n*q*(1-q)/((p-q)**2)
     return var_
 
+def binary_string(number, delta_s):
+    binary =  bin(number)[2:]
+    append_0 = '0' * len(delta_s - bin(number)[2:])
+    return append_0 + binary
 
 def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
     """_summary_
@@ -99,7 +103,7 @@ def weight_score(n: int, varepsilon: float, d: int, batch: int) -> float:
     p = exp(varepsilon) / (exp(varepsilon)+d-1) 
     # q = (1-p)/(d-1)
     # print(n, p)
-    weight_score_ = exp(batch)*n
+    weight_score_ = 20/(batch)
     # weight_score_ = 1
     print(f"batch:: {batch}, weight_score:", weight_score_)
     return weight_score_

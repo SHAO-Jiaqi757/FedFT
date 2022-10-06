@@ -71,8 +71,8 @@ class FAServer(FAServerPEM):
 
         s_0 = 0
         
-        C_i = {}
-        C_i[0] = 0
+        A_i = {}
+        A_i[0] = 0
         
         find_budget = False
 
@@ -107,16 +107,16 @@ class FAServer(FAServerPEM):
             delta_s = s_i - s_0
             s_0 = s_i
 
-            D_i = {}
-            for val in C_i.keys():
+            C_i = {}
+            for val in A_i.keys():
                 for offset in range(2**delta_s):
-                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) # inherit weight_score
+                    C_i[(val << delta_s) + offset] = A_i[val]/(2**delta_s) # inherit weight_score
 
             
             # print("Privacy mechanism type:", self.privacy_mechanism_type)
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type)
+            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type)
             # mechanism = privacy_mechanism(
-            #     self.varepsilon, D_i, self.privacy_mechanism_type)
+            #     self.varepsilon, C_i, self.privacy_mechanism_type)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -129,18 +129,18 @@ class FAServer(FAServerPEM):
                 clients_responses.append(response)
      
 
-            D_i = handle_response(clients_responses)
+            C_i = handle_response(clients_responses)
 
-            D_i_sorted = sorted(D_i.items(), key=lambda x: x[-1], reverse=True)
+            C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
 
-            C_i = {}
-            for indx in range(min(self.k, len(D_i_sorted))):
-                v, count = D_i_sorted[indx]
+            A_i = {}
+            for indx in range(min(self.k, len(C_i_sorted))):
+                v, count = C_i_sorted[indx]
                 if count > 0:
-                    C_i[v] = count
-            # print(f"Group {i} generated: {C_i}")
-        return C_i
+                    A_i[v] = count
+            # print(f"Group {i} generated: {A_i}")
+        return A_i
 
 
 if __name__ == '__main__':

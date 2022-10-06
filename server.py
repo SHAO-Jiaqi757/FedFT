@@ -112,9 +112,9 @@ class FAServerPEM():
             Dict: top-k heavy hitters C_g and their frequencies.
         """
         s_0 = ceil(log(self.k, 2))
-        C_i = {}
+        A_i = {}
         for i in range(2**s_0):
-            C_i[i] = 0
+            A_i[i] = 0
         adder_base = int((2*self.n)/((self.iterations*(self.iterations+1)))) 
         participants = 0
         for i in range(1, self.iterations+1):
@@ -123,12 +123,12 @@ class FAServerPEM():
                 ceil((i-1)*(self.m-s_0)/self.iterations)
 
             # print("[PEM] bits/iter:", delta_s)
-            D_i = {}
-            for val in C_i.keys():
+            C_i = {}
+            for val in A_i.keys():
                 for offset in range(2**delta_s):
-                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
+                    C_i[(val << delta_s) + offset] = A_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
 
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i, WT=self.WT, s_i = s_i)
+            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i, WT=self.WT, s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -150,34 +150,34 @@ class FAServerPEM():
                     clients_responses.append(response)
             participants = end_participants 
 
-            D_i = handle_response(clients_responses)
+            C_i = handle_response(clients_responses)
 
-            D_i_sorted = sorted(D_i.items(), key=lambda x: x[-1], reverse=True)
+            C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
 
-            C_i = {}
-            for indx in range(min(self.k, len(D_i_sorted))):
-                v, count = D_i_sorted[indx]
+            A_i = {}
+            for indx in range(min(self.k, len(C_i_sorted))):
+                v, count = C_i_sorted[indx]
                 if count > 0:
-                    C_i[v] = count
-            # print(f"Group {i} generated: {C_i}")
-        return C_i
+                    A_i[v] = count
+            # print(f"Group {i} generated: {A_i}")
+        return A_i
 
     def server_run(self):
         evaluate_score = 0
         for rnd in range(self.round):
             np.random.shuffle(self.clients)
             
-            C_i = self.predict_heavy_hitters()
+            A_i = self.predict_heavy_hitters()
 
-            C_i = list(C_i.keys())
+            A_i = list(A_i.keys())
             print(f"Truth ordering: {self.C_truth}")
-            print(f"Predicted ordering: {C_i}")
+            print(f"Predicted ordering: {A_i}")
 
-            evaluate_score += self.evaluate_module.evaluate(self.C_truth, C_i)
+            evaluate_score += self.evaluate_module.evaluate(self.C_truth, A_i)
         evaluate_score /= self.round
         print(
-            f"ROUND {rnd} :: varepsilon = {self.varepsilon}, {self.evaluate_type}= {evaluate_score:.2f}")
+            f"[Server End]:: varepsilon = {self.varepsilon}, {self.evaluate_type}= {evaluate_score:.2f}")
         return self.varepsilon, evaluate_score
 
     def server_run_plot_varepsilon(self, min_varepsilon, step_varepsilon, max_varepsilon):

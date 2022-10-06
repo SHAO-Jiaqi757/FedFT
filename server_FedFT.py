@@ -40,25 +40,25 @@ class FedFTServer(FAServerPEM):
         bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
-        C_i = {}
-        C_i[0] = 0 # initial weight_score
+        A_i = {}
+        A_i[0] = 0 # initial weight_score
 
      
 
         for i in range(self.iterations):
             if stop_iter-1 < i:
                 print(self.m-s_0)
-                return dict((key<<(self.m-s_0), value) for (key, value) in C_i.items())
+                return dict((key<<(self.m-s_0), value) for (key, value) in A_i.items())
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
 
-            D_i = {}
-            for val in C_i.keys():
+            C_i = {}
+            for val in A_i.keys():
                 for offset in range(2**delta_s):
-                    D_i[(val << delta_s) + offset] = C_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
+                    C_i[(val << delta_s) + offset] = A_i[val]/(2**delta_s) if self.WT else 0 # inherit weight_score
 
-            privacy_module = PrivacyModule(self.varepsilon, D_i, type=self.privacy_mechanism_type, batch=i+1, WT=self.WT, s_i = s_i)
+            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i+1, WT=self.WT, s_i = s_i)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -80,18 +80,18 @@ class FedFTServer(FAServerPEM):
                     clients_responses.append(response)
             participants = end_participants
 
-            D_i = handle_response(clients_responses)
+            C_i = handle_response(clients_responses)
 
-            D_i_sorted = sorted(D_i.items(), key=lambda x: x[-1], reverse=True)
+            C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
 
-            C_i = {}
-            for indx in range(min(self.k, len(D_i_sorted))):
-                v, count = D_i_sorted[indx]
+            A_i = {}
+            for indx in range(min(self.k, len(C_i_sorted))):
+                v, count = C_i_sorted[indx]
                 if count > 0:
-                    C_i[v] = count
-            # print(f"Group {i} generated: {C_i}")
-        return C_i
+                    A_i[v] = count
+            # print(f"Group {i} generated: {A_i}")
+        return A_i
 
 
 if __name__ == '__main__':

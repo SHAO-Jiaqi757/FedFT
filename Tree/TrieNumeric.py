@@ -3,13 +3,13 @@ import json
 # Trie class
 
 
-class Trie:
+class TrieNumeric:
     # init Trie class
     def __init__(self):
         self.root = self.getNode()
 
     def getNode(self):
-        return {"is_end": False, "children": {}}
+        return { "children": {}}
 
     def insert(self, item, pnode = None):
         """_summary_
@@ -30,7 +30,6 @@ class Trie:
                 current["children"][ch] = node
 
             current = node
-        current["is_end"] = True
         return current
 
     def search(self, item):
@@ -41,7 +40,7 @@ class Trie:
             node = current["children"][ch]
 
             current = node
-        return current["is_end"]
+        return self.is_end(current)
 
     def start_with(self, prefix):
         current = self.root
@@ -53,6 +52,9 @@ class Trie:
             current = node
         # return True if children contain keys and values
         return bool(current["children"])
+        
+    def is_end(self, node):
+        return not node["children"]
 
     def item_start_with(self, prefix):
 
@@ -79,10 +81,8 @@ class Trie:
     def __display_trie(self, ch, cur, item='', item_list=[]):
         item = item + ch
         
-        if cur['is_end']: 
-            item_list.append(item)
-
         if not cur["children"]:
+            item_list.append(item)
             return
         for ch in cur["children"]:
             self.__display_trie(ch, cur['children'][ch], item, item_list)
@@ -92,10 +92,9 @@ class Trie:
 
     def _delete(self, current, item, index):
         if(index == len(item)):
-            if not current["is_end"]:
+            if current["children"]:
                 return False
-            current["is_end"] = False
-            return len(current["children"].keys()) == 0
+            return self.is_end(current) 
 
         ch = item[index]
         if not ch in current['children']:
@@ -134,9 +133,9 @@ class Trie:
 
 if __name__ == '__main__':
     trie = Trie()
-    pnode = trie.insert("apple")
+    pnode = trie.insert('10101')
     # print()
-    print(trie.insert("apsdfk"))
-    print(trie.insert("abe"))
-    print(trie.item_start_with('ap'))
-    # print(trie.display_trie())
+    print(trie.insert('101', pnode))
+    print(trie.insert('11'), pnode)
+    # print(trie.item_start_with())
+    print(trie.display_trie())

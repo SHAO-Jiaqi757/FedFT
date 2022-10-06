@@ -49,8 +49,9 @@ if __name__ == '__main__':
         evaluate_module_type = "F1" # ["NDCG", "F1"]
 
         # ----Weight Tree & Client Size fitting---- # 
-        server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
-            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate)
+        server = WTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k,
+            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate, 
+            is_uniform_size=False)
 
         if is_generate_clients:
             truth_top_k = server.C_truth[:]

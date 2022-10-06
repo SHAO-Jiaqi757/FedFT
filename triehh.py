@@ -203,20 +203,20 @@ class SimulateTrieHH(FAServerPEM):
         self._set_client_per_batch()
 
 if __name__ == '__main__':
-    n = 10000
+    n = 2000
 
     m = 64
     k = 8
-    init_varepsilon = 0.2
-    step_varepsilon = 0.7
-    max_varepsilon = 12
-    iterations = 32
+    init_varepsilon = 0.5
+    step_varepsilon = 0.6
+    max_varepsilon = 9
+    iterations = 32 
 
-    round = 10
+    round = 50
 
-    client_size = 99411
-    # save_path_dir = f"./results/connectionloss_{client_size}"
-    truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients.txt", k=k)
+    n = 2184
+    save_path_dir = f""  # result path 
+    truth_top_k, clients = load_clients(filename=f"./dataset/zipf_{n}.txt", k=k)  # load clients from .txt
 
     delta = 1/(n**2)
 
@@ -227,8 +227,8 @@ if __name__ == '__main__':
         clients=clients, C_truth=truth_top_k,
             delta=delta, evaluate_type=evaluate_module_type)
     # server.server_run()
-    server.server_run_plot_varepsilon(
+    x, y = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
-
+    print([x, y])
     # visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
     
