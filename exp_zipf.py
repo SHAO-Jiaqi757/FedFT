@@ -19,17 +19,17 @@ if __name__ == '__main__':
     n = 2000
 
     m = 64
-    k = 5
+    k = 5 
     init_varepsilon = 0.5
     step_varepsilon = 0.6
     max_varepsilon = 9
     iterations = 32 
 
-    round = 30
+    round = 50
 
     connection_loss_rate = 0
 
-    n = 2184 
+    n = 99413
     save_path_dir = f""  # result path 
     truth_top_k, clients = load_clients(filename=f"./dataset/zipf_{n}.txt", k=k)  # load clients from .txt
 
@@ -45,7 +45,10 @@ if __name__ == '__main__':
         server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
             privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate
         )
-    
+        # server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
+        #     privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate,
+        #     is_uniform_size= True
+        # ) 
         x_pem, y_pem = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
 
