@@ -33,10 +33,8 @@ class FedFTServer(FAServerPEM):
             Dict: top-k heavy hitters C_g and their frequencies.
         """
 
-
-        # adder_base = int((2*self.n)/(self.iterations*(self.iterations+1)))
-        adder_base = int((2*self.n)/((stop_iter*(stop_iter+1)))) 
-        participants = 0 
+        
+        participants = 0
         bits_per_batch = ceil(self.m / self.iterations)
 
         s_0 = 0
@@ -45,10 +43,8 @@ class FedFTServer(FAServerPEM):
 
      
 
-        for i in range(self.iterations):
-            if stop_iter-1 < i:
-                print(self.m-s_0)
-                return dict((key<<(self.m-s_0), value) for (key, value) in A_i.items())
+        for i in range(stop_iter):
+                
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
@@ -63,16 +59,16 @@ class FedFTServer(FAServerPEM):
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
-            if self.is_uniform_size : adder = int(self.n/self.iterations)
+            if self.is_uniform_size : adder = int(self.n/stop_iter)
             
-            else: adder = (i+1)*adder_base
+            else: adder = int(n/(2*stop_iter) + (i) * self.n / (stop_iter* (stop_iter + 1)))
             print(f"Sampling {adder} clients")
             end_participants = participants + adder
 
             if i == stop_iter-1:
                 end_participants = self.n
 
-            for client in self.clients[participants: end_participants+1]:
+            for client in self.clients[participants: end_participants]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
                 p = random.random() 
@@ -91,30 +87,32 @@ class FedFTServer(FAServerPEM):
                 if count > 0:
                     A_i[v] = count
             # print(f"Group {i} generated: {A_i}")
-        return A_i
+        print(self.m-s_0)
+        return dict((key<<(self.m-s_0), value) for (key, value) in A_i.items())
+  
 
 
 if __name__ == '__main__':
-    n = 2000
+    n = 3000
     
-    m =32
-    k = 2
+    m =16
+    k = 1
     init_varepsilon = 3.7
     step_varepsilon = 6
     max_varepsilon = 9
     iterations = 16
-    stop_iter = 11
+    stop_iter = 10
     
 
     round = 1
 
-    truth_top_k, clients = load_clients(filename="./dataset/synthetic_steps.txt", k=k, encode=False)
-    # truth_top_k =[]
-    # clients = []
+    # truth_top_k, clients = load_clients(filename="./dataset/synthetic_steps.txt", k=k, encode=False)
+    truth_top_k =[]
+    clients = []
     privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
     evaluate_module_type = "F1" # ["NDCG", "F1"]
   
-    # ----Weight Tree & Client Size fitting---- # 
+    # ----FedFT---- # 
     server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
         privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, is_uniform_size=False\
         )
@@ -127,20 +125,20 @@ if __name__ == '__main__':
     print("Predict hhs:", HHs)
 
 
-    server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
-        privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, is_uniform_size=True\
-        )
+    # server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth = truth_top_k, \
+    #     privacy_mechanism_type = privacy_mechanism_type, evaluate_type=evaluate_module_type, is_uniform_size=True\
+    #     )
 
-    pem_hhs = list(server.predict_heavy_hitters(stop_iter).keys())
-    print("Predict hhs:", HHs)
+    # pem_hhs = list(server.predict_heavy_hitters(stop_iter).keys())
+    # print("Predict hhs:", HHs)
 
-    delta = 1/(len(clients)**2)
+    # delta = 1/(len(clients)**2)
 
 
-    server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, \
-        clients=clients, C_truth=truth_top_k,
-            delta=delta, evaluate_type=evaluate_module_type)
-    server.server_run()
+    # server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, \
+    #     clients=clients, C_truth=truth_top_k,
+    #         delta=delta, evaluate_type=evaluate_module_type)
+    # server.server_run()
 
     with open("plural.txt", "wb") as f:
         pickle.dump([HHs, server.clients], f)

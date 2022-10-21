@@ -1,3 +1,6 @@
+"""
+PEM
+"""
 from math import ceil, log
 from random import random, uniform
 from typing import Dict, List
@@ -11,7 +14,7 @@ np.random.seed(0)
 class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
     clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", 
-    connection_loss_rate: float = 0, is_uniform_size: bool=True):
+    connection_loss_rate: float = 0):
         """_summary_
 
         Args:
@@ -26,7 +29,6 @@ class FAServerPEM():
             privacy_mechanism_type (str): local differential privacy mechanism. default is GRR (options: GRR, OUE, GRR_X, None)
             evaluate_type (str): evaluate function to estimate performance (NDCG or F1)
             connection_loss_rate (float)
-            is_uniform_size: same size per iteration?
 
         """
         self.n = n
@@ -37,13 +39,12 @@ class FAServerPEM():
         self.iterations = iterations
         self.round = round
         self.clients = clients
-        self.is_uniform_size  = is_uniform_size
 
         self.evaluate_type = evaluate_type
         self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
 
-        self.__available_data_distribution = ["poisson", "uniform"]
-        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE","GRR_X"]
+        self.__available_data_distribution = ["poisson", "uniform", "normal"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE","GRR_X", "GRRX"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -69,8 +70,8 @@ class FAServerPEM():
         self.client_distribution_type = type
         self.__simulate_client(type)()
 
-    def __simulate_client_poisson(self, mu=None, var=None):
-        if mu is None and var is None:
+    def __simulate_client_poisson(self, mu=None):
+        if mu is None:
 
             mu = float(input("mean:"))
         print(f"Generate {self.n} clients with [Poisson (mu={mu}]")
@@ -88,11 +89,24 @@ class FAServerPEM():
         clients = np.absolute(clients.astype(int))
         self.clients = clients
 
+    def __simulate_client_normal(self, mu=None, var=None):
+        if mu is None and var is None:
+
+            mu = float(input("mean:"))
+            sigma = float(input("standard deviation:"))
+        print(f"Generate {self.n} clients with [Normal (mu={mu}, sigma={sigma})]")
+        gen_data = np.random.normal(mu, sigma, self.n).astype(int)
+        gen_data_filter = gen_data > 0 
+        clients =gen_data[gen_data_filter]
+        self.clients = clients
+
     def __simulate_client(self, type: str):
         if type == "poisson":
             return self.__simulate_client_poisson
         elif type == "uniform":
             return self.__simulate_client_uniform
+        elif type == "normal":
+            return self.__simulate_client_normal
         else:
             raise ValueError(
                 f"Invalid client distribution type! Available types: {self.__available_data_distribution}")
@@ -115,7 +129,6 @@ class FAServerPEM():
         A_i = {}
         for i in range(2**s_0):
             A_i[i] = 0
-        adder_base = int((2*self.n)/((stop_iter*(stop_iter+1)))) 
         participants = 0
 
         for i in range(1, self.iterations+1):
@@ -127,25 +140,18 @@ class FAServerPEM():
             delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
                 ceil((i-1)*(self.m-s_0)/self.iterations)
 
-            # print("[PEM] bits/iter:", delta_s)
-            C_i = {}
-            for val in A_i.keys():
-                for offset in range(2**delta_s):
-                    C_i[(val << delta_s) + offset] = 0 # inherit weight_score
-
-            privacy_module = PrivacyModule(self.varepsilon, C_i, type=self.privacy_mechanism_type, batch=i, s_i = s_i)
+            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type, s_i = s_i, required_bits = delta_s)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
-            if self.is_uniform_size : adder = int(self.n/self.iterations)
-            
-            else: adder = (i)*adder_base
+            adder = int(self.n/self.iterations)
+
             print(f"Sampling {adder} clients")
             end_participants = participants + adder
 
         
-            if i== stop_iter-1:
+            if i== stop_iter:
                 end_participants = self.n
 
             for client in self.clients[participants: end_participants+1]:
@@ -165,7 +171,7 @@ class FAServerPEM():
             for indx in range(min(self.k, len(C_i_sorted))):
                 v, count = C_i_sorted[indx]
                 if count > 0:
-                    A_i[v] = count
+                    A_i[v] = 0
             # print(f"Group {i} generated: {A_i}")
         return A_i
 
@@ -173,13 +179,18 @@ class FAServerPEM():
         evaluate_score = 0
         for rnd in range(self.round):
             np.random.shuffle(self.clients)
-            
+            self.rnd = rnd 
+            # self.varepsilon -= 0.01 * self.rnd
+            print(self.varepsilon)
             A_i = self.predict_heavy_hitters()
+            # A_i =  ([int(bit_string, 2) for bit_string in self.trie.display_trie(is_get_hhs = True)]) 
 
-            A_i = list(A_i.keys())
+            # A_i = [int(i, 2) for i in list(A_i.keys())]
+            # self.C_truth = [int(str(i), 2) for i in self.C_truth]
             print(f"Truth ordering: {self.C_truth}")
             print(f"Predicted ordering: {A_i}")
-
+            score = self.evaluate_module.evaluate(self.C_truth, A_i)
+            print(f"F1 = {score}")
             evaluate_score += self.evaluate_module.evaluate(self.C_truth, A_i)
         evaluate_score /= self.round
         print(

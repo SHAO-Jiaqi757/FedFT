@@ -1,3 +1,7 @@
+"""
+GRR_X will be updated to GRRX
+"""
+
 from math import exp
 import random
 import time
@@ -5,18 +9,17 @@ import numpy as np
 from typing import Dict, List
 
 from privacy_module.privacy_module_abc import PrivacyModuleABC
-from utils import weight_score
 
 random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, batch=-1):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, required_bits = 0):
         self.varepsilon = varepsilon
         self.D = D
-        self.d = len(self.D)
         self.type = type
         self.D_keys = sorted(list(D.keys()))
         self.s_i = s_i
-        self.batch = batch
+        self.required_bits = required_bits
+      
 
     def privacy_mechanism(self) -> callable:
         """_summary_
@@ -29,14 +32,19 @@ class PrivacyModule(PrivacyModuleABC):
         """
 
         if self.type == "GRR":
-            p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d-1)
+            d = len(self.D)*2**self.required_bits
+            p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
 
             # print(f"Generate Random Response Probability: {p}")
             return self.__GRR(p)
         elif self.type == "GRR_X":
-            self.d +=1 
-            p = exp(self.varepsilon) / (exp(self.varepsilon)+self.d-1)
+            d = len(self.D) * 2**self.required_bits + 1
+            p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
             return self.__GRR_X(p)
+        elif self.type == "GRRX":
+            d = len(self.D) * 2**self.required_bits + 1
+            p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
+            return self.__GRRX(p)
 
         elif self.type == "None":
             return lambda x: x
@@ -53,6 +61,8 @@ class PrivacyModule(PrivacyModuleABC):
         """
         if self.type == "GRR" or self.type == "GRR_X":
             return self.__handle_GRR_response()
+        elif self.type == "GRRX":
+            return self.__handle_GRRX_response()
         elif self.type == "None":
             return self.__handle_GRR_response()
         elif self.type == "OUE":
@@ -62,15 +72,27 @@ class PrivacyModule(PrivacyModuleABC):
     
     def __handle_GRR_response(self):
         def __handle_GRR_response_(responses):
-            weight = 1 
             for response in responses:
                 if response == None: continue
                 
-                self.D[response] = self.D.get(response, 0) + weight 
+                self.D[response] = self.D.get(response, 0) + 1
             return self.D
 
         return __handle_GRR_response_
-    
+
+    def __handle_GRRX_response(self):
+        def __handle_GRRX_response_(responses):
+            C = {}
+            for response in responses:
+                if response == None: continue
+                if response not in C:
+                    C[response] = self.D.get(response[:self.s_i], 0) + 1 
+                else:
+                    C[response] += 1
+            return C
+
+        return __handle_GRRX_response_
+     
 
     def __GRR(self, p: float):
         """_summary_
@@ -82,15 +104,17 @@ class PrivacyModule(PrivacyModuleABC):
             GRR function with argument v
         """
         def GRR_(v: int):
-            if v not in self.D:
+            prefix_v = v >> self.required_bits
+            suffix_v = v & ((1 << self.required_bits) - 1)
+            if prefix_v not in self.D:
                 return
             prob = random.random()
 
             if prob < p:
                 return v
             else:
-                random_choice_options = list(self.D.keys())
-                random_choice_options.remove(v)
+                random_choice_options = [i for i in range(2**self.required_bits)]
+                random_choice_options.remove(suffix_v)
                 return random.choice(random_choice_options) # random response
         return GRR_
 
@@ -122,6 +146,45 @@ class PrivacyModule(PrivacyModuleABC):
             return response # random response
         return GRR_X
 
+    def __GRRX(self, p: float):
+        """_summary_
+
+        Args:
+            p (float): probability of replying truth answer
+            d (int): domain size of D
+        Returns: 
+            GRR_X function with argument v
+        """
+        def GRRX(v: str):
+           
+            prob = random.random()
+
+            if prob < p:
+                response = v    
+            else:
+                random_choice_prefix_options = list(self.D.keys())
+                random_append = np.binary_repr(random.randint(0, 2**self.required_bits-1), self.required_bits)
+                random_choice_options = [ i + random_append for i in random_choice_prefix_options]
+
+                if v[:self.s_i] in random_choice_prefix_options:
+                
+                    if self.s_i:
+                        X = np.binary_repr(random.randint(0, 2**(self.s_i)-1), self.s_i) 
+                    else:
+                        X = ""
+                    
+                    X += random_append
+
+                    random_choice_options.append(X) # randomly select X
+        
+                else:
+                    random_choice_options.append(v) # X = v
+                response = random.choice(random_choice_options)
+            if len(response) != self.s_i + self.required_bits:
+                print("warning")
+
+            return response # random response
+        return GRRX
 
     def __OUE(self):
         """

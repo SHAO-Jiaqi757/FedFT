@@ -19,13 +19,13 @@ if __name__ == '__main__':
     n = 2000
 
     m = 64
-    k = 8
+    k = 5
     init_varepsilon = 0.5
     step_varepsilon = 0.6
     max_varepsilon = 9
     iterations = 32 
 
-    round = 50
+    round = 30
 
     connection_loss_rate = 0
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     results = {}
    
-    while connection_loss_rate < 0.7:
+    while connection_loss_rate < 0.1:
 
         privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
         evaluate_module_type = "F1" # ["NDCG", "F1"]
@@ -52,9 +52,7 @@ if __name__ == '__main__':
         if "PEM" not in results:
             results["PEM"] = {}
         results["PEM"][connection_loss_rate] = [x_pem, y_pem]
-       
-        
-        
+         
         # ----GTF----( GRR + Trie + client_size_fitting ) #
         
         server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
@@ -73,7 +71,8 @@ if __name__ == '__main__':
         privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
         # ----XTU----( GRR_X + Trie + Uniform size) #
         server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate
+            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, connection_loss_rate=connection_loss_rate,
+            is_uniform_size=True
         )
     
         x_xtu, y_xtu = server.server_run_plot_varepsilon(
@@ -102,7 +101,7 @@ if __name__ == '__main__':
 
         connection_loss_rate += 0.2
 
-    plot_all_in_one([x_pem, x_gtf, x_xtu, x_xtf], [y_pem, y_gtf, y_xtu, y_xtf], x_label="", y_label="", title="", labels=["PEM(GTU)", "GTF", "XTU", "PEM(XTF)"])
+    # plot_all_in_one([x_pem, x_gtf, x_xtu, x_xtf], [y_pem, y_gtf, y_xtu, y_xtf], x_label="", y_label="", title="", labels=["PEM(GTU)", "GTF", "XTU", "PEM(XTF)"])
 
-    with open("./results/exp_WT.txt", 'wb') as f:
+    with open(f"./results/exp_zipf_{n}.txt", 'wb') as f:
         pickle.dump(results, f)

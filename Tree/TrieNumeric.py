@@ -1,18 +1,24 @@
 import pickle
-import json
+import json, heapq, sys
 # Trie class
-
+class Node(object):
+    def __init__(self, val='', count = 0):
+        self.val = val
+        self.count = count
+        self.par = None
+        self.children = {}
 
 class TrieNumeric:
     # init Trie class
-    def __init__(self, bits_in_node):
-        self.root = self.getNode()
+    def __init__(self, bits_in_node, k=sys.maxsize):
+        self.root = Node()
         self.bits_in_node = bits_in_node
+        self.k = k
 
     def getNode(self):
         return { "children": {}}
 
-    def insert(self, item, pnode = None):
+    def insert(self, item, count=0, pnode = None, correction=False):
         """_summary_
 
         Args:
@@ -34,15 +40,33 @@ class TrieNumeric:
         indx = 0
         while indx < len(item):
             ch = item[indx: indx +self.bits_in_node]
-            if ch in current['children']:
-                node = current["children"][ch]
+            if ch in current.children:                    
+                node = current.children[ch]
+                node.count += count
             else:
-                node = self.getNode()
-                current["children"][ch] = node
+                if correction and current.children:
+                    top = sorted(current.children.keys(), key=lambda x: -current.children[x].count)[0]
+                    current.children[top].count += 1
+                    print("Correction!")
+                node = Node(ch, count) 
+                current.children[ch] = node  # insert node
+                node.par = current
 
             current = node
             indx += self.bits_in_node
+
         return current
+
+
+    def __delete_node(self, node):
+        if (not node.par or node.children):
+            return
+        try:
+            del node.par.children[node.val]
+            print("DELETE") 
+        except KeyError:
+            ...
+        self.__delete_node(node.par)
 
     def search(self, item):
         current = self.root
@@ -92,29 +116,42 @@ class TrieNumeric:
         print(f'[Trie]::Items start with [{prefix}]')
         self.__display_trie('', current, prefix, items_list)
         return items_list
-  
-    def display_trie(self):
-        print("[Trie]:: Items in the trie: ")
-        items_list = []
-        self.__display_trie('', self.root, '', items_list)
-        return items_list
 
-    def __display_trie(self, ch, cur, item='', item_list=[]):
+    def get_predictoin(self, ch, cur, item='', item_list=[]):
         item = item + ch
-        
-        if not cur["children"]:
+        if not cur.children and item:
             item_list.append(item)
             return
-        for ch in cur["children"]:
-            self.__display_trie(ch, cur['children'][ch], item, item_list)
+        ch = sorted(cur.children.keys(), key=lambda x: cur.children[x].count)[-1]
+        # for ch in cur.children:
+        self.get_predictoin(ch, cur.children[ch], item, item_list)
+
+    def display_trie(self, is_get_hhs = False):
+        print("[Trie]:: Items in the trie: ")
+        items_list = []
+        self.__display_trie('', self.root, '', items_list, is_get_hhs)
+        if is_get_hhs:
+            return [hhs[0] for hhs in sorted(items_list, key=lambda x: -x[-1])[:self.k]]
+        else:
+            return items_list
+
+    def __display_trie(self, ch, cur, item='', item_list=[], is_get_hhs = False):
+        item = item + ch
+        
+        if not cur.children and item:
+            if is_get_hhs: item_list.append((item, cur.count))
+            else: item_list.append(item)
+            return
+        for ch in cur.children:
+            self.__display_trie(ch, cur.children[ch], item, item_list, is_get_hhs)
 
 
     def delete(self, item):
         self._delete(self.root, item, 0)
 
     def _delete(self, current, item, index):
-        if(index*self.bits_in_node == len(item)):
-            if current["children"]:
+        if(index*self.bits_in_node >= len(item)):
+            if current.children:
                 return False
             return self.is_end(current) 
 
@@ -131,9 +168,41 @@ class TrieNumeric:
 
         return False
 
+class PriorityQueue(object):
+    def __init__(self):
+        self.queue = []
+ 
+    def __str__(self):
+        return ' '.join([str(i) for i in self.queue])
+ 
+    # for checking if the queue is empty
+    def isEmpty(self):
+        return len(self.queue) == 0
+ 
+    # for inserting an element in the queue
+    def insert(self, data):
+        self.queue.append(data)
+ 
+    # for popping an element based on Priority
+    def delete(self):
+        try:
+            max_val = 0
+            for i in range(len(self.queue)):
+                if self.queue[i] > self.queue[max_val]:
+                    max_val = i
+            item = self.queue[max_val]
+            del self.queue[max_val]
+            return item
+        except IndexError:
+            print()
+            exit()
+ 
+
 if __name__ == '__main__':
     trie = TrieNumeric(2)
     pnode = trie.insert('10101')
+    trie.insert("10101")
+    trie.delete("10101")
     # print()
     print(trie.insert('101', pnode))
     print(trie.insert('111', pnode))
