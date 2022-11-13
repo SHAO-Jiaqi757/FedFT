@@ -58,7 +58,7 @@ def plot_all_in_one(x_list: List[List], y_list: List[List], x_label: str, y_labe
     plt.title(title)
     plt.savefig(f"{title}_{time.time_ns()}.png")
     
-def pr_N_mostFrequentNumber(arr, K):
+def pr_N_mostFrequentNumber(arr, K=-1):
  
     mp = {}
     for i in range(len(arr)):
@@ -68,8 +68,10 @@ def pr_N_mostFrequentNumber(arr, K):
             mp[arr[i]] = 1
     
     a = sorted(mp.items(), key=lambda x: x[1],
-               reverse=True)[:K]
-
+               reverse=True)
+    if K==-1: return [x[0] for x in a]
+    
+    a = a[:K]
     top_k = [x[0] for x in a]
     return top_k
 
@@ -119,9 +121,11 @@ def decode_result(self, result: List) -> List:
 
 
 
-def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, encode=True):
+def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, restriction=-1, encode=True):
     with open(filename, 'rb') as f:
         clients = pickle.load(f)
+    if restriction > 0:
+        clients = random.sample(clients, restriction)
     truth_top_k = pr_N_mostFrequentNumber(clients, k)
 
     if not encode:
@@ -135,6 +139,42 @@ def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, encod
         truth_top_k[i] = number 
      
     return truth_top_k, clients
+
+
+def plot(exp, save_filename = "./results/zipfs.png",title="", line_type = '.--', y_label="F1", x_label=r"$\varepsilon$"):
+    """_summary_
+
+    Args:
+        exp (_type_): {model_name: {x: [], y: []}}
+        models (_type_): _description_
+        save_filename (str, optional): _description_. Defaults to "./results/zipfs.png".
+        y_label (str, optional): _description_. Defaults to "F1".
+        x_label (regexp, optional): _description_. Defaults to r"$\varepsilon$".
+    """
+    models = list(exp.keys())
+    color = {
+        "PEM": 'teal', "PEM(GTU)": 'teal',
+        "FedFT": "red", "FedFT(XTF)": 'red',
+        'GTF':"yellowgreen",
+        'XTU': "violet", "TrieHH": "lightslategrey"
+    }
+    fig = plt.figure()
+    for i in range(len(exp)):
+        if models[i] == "PEM":
+            model_name = "PEM(GTU)"
+        elif models[i] == "XTF":
+            model_name = "FedFT"
+        else:
+            model_name = models[i]
+    
+        plt.plot(exp[models[i]]['x'], exp[models[i]]['y'], line_type, color=color[model_name], label=model_name)
+
+    plt.legend(loc="upper left")
+    plt.xlabel(x_label, fontdict={'fontsize': 16})
+    plt.ylabel(y_label, fontdict={'fontsize': 16})
+    # plt.style.use('seaborn-whitegrid')
+    plt.title(title, fontdict={'fontsize': 16})
+    plt.savefig(save_filename+".png")
 
 if __name__ == '__main__':
     xs = [[i for i in range(10)] for _ in range(2)]
