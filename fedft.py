@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 from tqdm.contrib import DummyTqdmFile
 from evaluate_module.evaluate_module import EvaluateModule
-from server_FAServer import FedFTServer
+from server_AServer import Aserver
 from Cipher import *
 from utils import distance, load_clients, pr_N_mostFrequentNumber, encode_words
 
@@ -51,7 +51,7 @@ def fedft_cluster(clients: list, k: int, evaluate_module_type="recall", m=64, it
 
     n = len(clients)
     # print("[debug]:: n", n)
-    server = FedFTServer(n, m, k, varepsilon, iterations, round, clients=clients, C_truth=[0],
+    server = Aserver(n, m, k, varepsilon, iterations, round, clients=clients, C_truth=[0],
                          evaluate_type=evaluate_module_type, connection_loss_rate=connection_loss_rate,
                          is_uniform_size=False, optimize=False
                          )

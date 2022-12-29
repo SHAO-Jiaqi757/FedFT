@@ -1,0 +1,2 @@
+- The `server_AServer.py` contains the `Aserver` class, that is the auxiliary server of Phase II. 
+- `fedft.py` contains aggregation algorithms in Phase III.

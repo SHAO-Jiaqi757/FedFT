@@ -7,9 +7,9 @@ import os
 import pickle
 from time import sleep
 from tqdm import tqdm
-from group_fedft import fed_ft_aggregation
+from fedft import fed_ft_aggregation
 from server import FAServerPEM
-from server_FAServer import FedFTServer
+from server_AServer import Aserver
 from triehh import SimulateTrieHH
 from Cipher import *
 from utils import blockPrint,enablePrint, plot, load_clients, pr_N_mostFrequentNumber, encode_word

@@ -12,7 +12,7 @@ from utils import load_clients, blockPrint
 
 blockPrint()
 # random.seed(0)
-class FedFTServer(FAServerPEM):
+class Aserver(FAServerPEM):
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
         clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR_X", evaluate_type: str = "F1", 
         connection_loss_rate: float = 0, is_uniform_size: bool=False, stop_iter = -1, optimize=True):
