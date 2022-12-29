@@ -10,15 +10,16 @@ from typing import Dict, List
 
 from privacy_module.privacy_module_abc import PrivacyModuleABC
 
-random.seed(time.time_ns())
+# random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, required_bits = 0):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, required_bits = 0, optimize=False):
         self.varepsilon = varepsilon
         self.D = D
         self.type = type
         self.D_keys = sorted(list(D.keys()))
         self.s_i = s_i
         self.required_bits = required_bits
+        self.optimize = optimize
       
 
     def privacy_mechanism(self) -> callable:
@@ -34,12 +35,20 @@ class PrivacyModule(PrivacyModuleABC):
         if self.type == "GRR":
             d = len(self.D)*2**self.required_bits
             p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
-
+            self.p = p
             # print(f"Generate Random Response Probability: {p}")
             return self.__GRR(p)
         elif self.type == "GRR_X":
             d = len(self.D) * 2**self.required_bits + 1
             p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
+            # if self.optimize and p < 0.4 and d > 1: 
+            #     d = len(self.D)*2**self.required_bits
+            #     p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
+            #     self.p = p
+            #     self.type = "GRR"
+            #     print("debug:: change to GRR")
+            #     return self.__GRR(p)
+            self.p = p
             return self.__GRR_X(p)
         elif self.type == "GRRX":
             d = len(self.D) * 2**self.required_bits + 1
@@ -113,8 +122,13 @@ class PrivacyModule(PrivacyModuleABC):
             if prob < p:
                 return v
             else:
-                random_choice_options = [i for i in range(2**self.required_bits)]
-                random_choice_options.remove(suffix_v)
+                random_choice_options = []
+                for prefix in self.D:
+                    for i in range(2**self.required_bits):
+                        y = (prefix << self.required_bits) + i
+                        if y == v: continue
+                        random_choice_options.append(y)
+
                 return random.choice(random_choice_options) # random response
         return GRR_
 
@@ -128,22 +142,27 @@ class PrivacyModule(PrivacyModuleABC):
             GRR_X function with argument v
         """
         def GRR_X(v: int):
-           
+            prefix_v = v >> self.required_bits
+            suffix_v = v & ((1 << self.required_bits) - 1) 
             prob = random.random()
 
             if prob < p:
-                response = v    
+                return v   # truely response 
             else:
-                random_choice_options = list(self.D.keys())
-                if v in random_choice_options:
-                    X = random.randint(0, 2**(self.s_i))
-                    random_choice_options.append(X) # randomly select X
+                # local response domain
+                random_choice_options = []
+                for prefix in self.D:
+                    for i in range(2**self.required_bits):
+                        y = (prefix << self.required_bits) + i
+                        if y == v: 
+                            if prefix_v in self.D:
+                                y =random.randint(0, 2**(self.s_i)) 
+                            else: continue
 
-                else:
-                    random_choice_options.append(v) # X = v
-                response = random.choice(random_choice_options)
+                        random_choice_options.append(y)
+                return random.choice(random_choice_options) # random response
 
-            return response # random response
+    
         return GRR_X
 
     def __GRRX(self, p: float):

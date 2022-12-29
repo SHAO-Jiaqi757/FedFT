@@ -1,5 +1,5 @@
 """
-FAServer will be updated to that in 'server_FAServer_bit.py' in the future.
+FedFTServer will be updated to that in 'server_FAServer_bit.py' in the future.
 """
 from math import ceil, log
 import random
@@ -7,20 +7,24 @@ from typing import Dict, List
 
 from privacy_module import PrivacyModule
 from server import FAServerPEM
+from _Tree import TrieNumeric
+from utils import load_clients, blockPrint
 
-from utils import load_clients
-
-
+blockPrint()
 # random.seed(0)
-
-class FAServer(FAServerPEM):
+class FedFTServer(FAServerPEM):
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
         clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR_X", evaluate_type: str = "F1", 
-        connection_loss_rate: float = 0, is_uniform_size: bool=False):
+        connection_loss_rate: float = 0, is_uniform_size: bool=False, stop_iter = -1, optimize=True):
             super().__init__(n, m, k, varepsilon, iterations, round, clients, C_truth, privacy_mechanism_type, evaluate_type, connection_loss_rate)
             self.bits_per_iter =ceil(self.m / self.iterations) 
             self.trie = TrieNumeric(self.bits_per_iter, k = k)
             self.is_uniform_size = is_uniform_size
+            if stop_iter == -1:
+                self.stop_iter = iterations
+            else: 
+                self.stop_iter = stop_iter
+            self.optimize = optimize
     def predict_heavy_hitters(self) -> Dict:
         """_summary_
 
@@ -40,30 +44,28 @@ class FAServer(FAServerPEM):
         participants = 0
         bits_per_batch = ceil(self.m / self.iterations)
 
-        for i in range(self.iterations):
+        for i in range(self.stop_iter):
             s_i = min(s_0 + bits_per_batch, self.m)
             delta_s = s_i - s_0
             s_0 = s_i
 
-            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s)
+            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s, optimize=self.optimize)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
-            if self.is_uniform_size : adder = int(self.n/self.iterations)
+            if self.is_uniform_size : adder = int(self.n/self.stop_iter)
             
-            else: adder = int((self.n / (2*self.iterations)) + (i) * self.n / (self.iterations* (self.iterations + 1)))
-            # else: adder = (i+1)*int((2*self.n)/((self.iterations*(self.iterations+1)))) 
+            else: adder = int(self.n /(2*self.stop_iter) + (i) * self.n / (self.stop_iter* (self.stop_iter + 1)))
             print(f"Sampling {adder} clients")
-            end_participants =  + participants + adder
+            end_participants = participants + adder
 
-            if i == self.iterations -1:
+            if i == self.stop_iter-1:
                 end_participants = self.n-1
 
             for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i)
                 response = mechanism(prefix_client)
-           
                 p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
@@ -73,41 +75,26 @@ class FAServer(FAServerPEM):
 
             C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
+            counts = 0
+            if i > 0 and privacy_module.p < 0.5 and self.optimize:
+                threshold = 0 if not C_i_sorted else C_i_sorted[0][1]/ self.k 
+            else: threshold = 0
             A_i = {}
-            for indx in range(min(self.k, len(C_i_sorted))):
+            # a  = self.k*2**self.bits_per_iter if i==self.stop_iter else self.k
+            a = len(C_i_sorted) if i==self.stop_iter-1 else self.k
+            for indx in range(min(a, len(C_i_sorted))):
                 v, count = C_i_sorted[indx]
-                if count > 0:
+                if count > threshold:
                     A_i[v] = 0  # validate v in next iteration
-                    # self.trie.insert((v), count) # count is stored in trie
-                 
-            # print(f"Group {i} generated: {A_i}")
+                    if i == self.stop_iter-1: A_i[v] = count
+                    counts += count
+                    # self.trie.insert((bin(v)[2:]), count) # count is stored in trie
+            if not A_i:
+                A_i = {0: 0}
+            # last_high_counts = 0 if not C_i_sorted else C_i_sorted[0][1]
+            # last_counts = counts
+        self.accurate_bits = self.m-s_0
+        # for hh in A_i:
+        #     A_i[hh] = A_i[hh]/counts
         return A_i
-
-
-if __name__ == '__main__':
-    m = 64
-    k = 5
-    init_varepsilon = 0.5
-    step_varepsilon = 0.6
-    max_varepsilon =  9
-    iterations = 32
-
-    round = 20
-
-    privacy_mechanism_type = "GRR_X" # ["GRR", "None","OUE"]
-    evaluate_module_type = "F1" # ["NDCG", "F1"]
-    n = 99413
-    save_path_dir = f""  # result path 
-    truth_top_k, clients = load_clients(filename=f"./dataset/zipf_{n}.txt", k=k)  # load clients from .txt
-
-    server = FAServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type, 
-        )
-    
-    x_xtf, y_xtf = server.server_run_plot_varepsilon(
-    init_varepsilon,  step_varepsilon, max_varepsilon)
-    server.server_run()
-    # print(([int(bit_string, 2) for bit_string in server.trie.display_trie(is_get_hhs = True)]))
-
-    # server.trie.item_start_with("1000101010001")
-   
+  

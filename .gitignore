@@ -6,3 +6,10 @@ __pycache__
 *.txt
 *.csv
 results
+dataset
+exp*
+exp_*
+rsync.sh
+pure_ldp
+*.ipynb
+_Tree

@@ -44,7 +44,7 @@ class FAServerPEM():
         self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform", "normal"]
-        self.__available_privacy_mechanism_type = ["GRR", "None", "OUE","GRR_X", "GRRX"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "GRR_X", "GRRX"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -181,23 +181,23 @@ class FAServerPEM():
             np.random.shuffle(self.clients)
             self.rnd = rnd 
             # self.varepsilon -= 0.01 * self.rnd
-            print(self.varepsilon)
-            A_i = self.predict_heavy_hitters()
+            print("eps", self.varepsilon)
+            self.A_i = self.predict_heavy_hitters()
             # A_i =  ([int(bit_string, 2) for bit_string in self.trie.display_trie(is_get_hhs = True)]) 
 
             # A_i = [int(i, 2) for i in list(A_i.keys())]
             # self.C_truth = [int(str(i), 2) for i in self.C_truth]
-            print(f"Truth ordering: {self.C_truth}")
-            print(f"Predicted ordering: {A_i}")
-            score = self.evaluate_module.evaluate(self.C_truth, A_i)
-            print(f"F1 = {score}")
-            evaluate_score += self.evaluate_module.evaluate(self.C_truth, A_i)
+            print(f"[eps = {self.varepsilon}] Truth ordering: {self.C_truth}")
+            print(f"[eps = {self.varepsilon}] Predicted ordering: {self.A_i}")
+            score = self.evaluate_module.evaluate(self.C_truth, self.A_i)
+            print(f"{self.evaluate_type}= {score}")
+            evaluate_score += self.evaluate_module.evaluate(self.C_truth, self.A_i)
         evaluate_score /= self.round
         print(
             f"[Server End]:: varepsilon = {self.varepsilon}, {self.evaluate_type}= {evaluate_score:.2f}")
         return self.varepsilon, evaluate_score
 
-    def server_run_plot_varepsilon(self, min_varepsilon, step_varepsilon, max_varepsilon):
+    def server_run_plot_varepsilon(self, min_varepsilon, step_varepsilon, max_varepsilon, is_plot = False):
         self.varepsilon = min_varepsilon
         varepsilon_list = []
         evaluate_score_list = []
@@ -206,8 +206,8 @@ class FAServerPEM():
             varepsilon_list.append(varepsilon)
             evaluate_score_list.append(evaluate_score)
             self.varepsilon += step_varepsilon
-
-        plot_single_line(varepsilon_list, evaluate_score_list, "varepsilon",
+        if is_plot:
+            plot_single_line(varepsilon_list, evaluate_score_list, "varepsilon",
                          f"{self.evaluate_type}", f"{self.evaluate_type} vs varepsilon", k=self.k)
         return varepsilon_list, evaluate_score_list
 

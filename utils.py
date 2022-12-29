@@ -1,4 +1,5 @@
 from math import exp, log, sqrt
+import os
 import pickle
 import sys
 import random
@@ -7,6 +8,7 @@ from typing import Dict, List
 from matplotlib import pyplot as plt
 import numpy as np
 from Cipher import *
+from pathlib import Path
 
 random.seed(time.time_ns())
 
@@ -120,7 +122,14 @@ def decode_result(self, result: List) -> List:
     return result
 
 
-
+def distance(x: int, y: int): 
+    diff = bin(x^y)
+    dis = 0
+    for i in diff: 
+        if i == '1': 
+            dis += 1
+    return dis
+    
 def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, restriction=-1, encode=True):
     with open(filename, 'rb') as f:
         clients = pickle.load(f)
@@ -139,9 +148,16 @@ def load_clients(filename="./dataset/triehh_clients.txt", k = sys.maxsize, restr
         truth_top_k[i] = number 
      
     return truth_top_k, clients
+# Disable
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enablePrint():
+    sys.stdout = sys.__stdout__
 
 
-def plot(exp, save_filename = "./results/zipfs.png",title="", line_type = '.--', y_label="F1", x_label=r"$\varepsilon$"):
+def plot(exp, save_filename = "./results/zipfs.png",title="", line_type = '.--', y_label="F1", x_label=r"$\varepsilon$", loc="upper left"):
     """_summary_
 
     Args:
@@ -156,25 +172,41 @@ def plot(exp, save_filename = "./results/zipfs.png",title="", line_type = '.--',
         "PEM": 'teal', "PEM(GTU)": 'teal',
         "FedFT": "red", "FedFT(XTF)": 'red',
         'GTF':"yellowgreen",
-        'XTU': "violet", "TrieHH": "lightslategrey"
+        'XTU': "violet", "TrieHH": "lightslategrey",
+        "OUE": "orange", "OLH": "blue", "THE": "green",
+        "HR": "black", "CMS": "brown"
     }
     fig = plt.figure()
     for i in range(len(exp)):
-        if models[i] == "PEM":
-            model_name = "PEM(GTU)"
-        elif models[i] == "XTF":
-            model_name = "FedFT"
-        else:
-            model_name = models[i]
+        # if models[i] == "PEM":
+        #     model_name = "PEM(GTU)"
+        # elif models[i] == "XTF":
+        #     model_name = "FedFT"
+        # else:
+        model_name = models[i]
     
-        plt.plot(exp[models[i]]['x'], exp[models[i]]['y'], line_type, color=color[model_name], label=model_name)
+        plt.plot(exp[models[i]]['x'], exp[models[i]]['y'], line_type, color=color[model_name], label=models[i])
 
-    plt.legend(loc="upper left")
+    plt.legend(loc=loc)
     plt.xlabel(x_label, fontdict={'fontsize': 16})
     plt.ylabel(y_label, fontdict={'fontsize': 16})
     # plt.style.use('seaborn-whitegrid')
     plt.title(title, fontdict={'fontsize': 16})
-    plt.savefig(save_filename+".png")
+    if save_filename:
+        plt.savefig(save_filename+".png")
+    
+def encode_words(word_list, return_binstring=False, binstring_width=64):
+    encoded_words = []
+    for i in range(len(word_list)):
+        number = encode_word(word_list[i])
+        if return_binstring:
+            number = np.binary_repr(number, binstring_width)
+        encoded_words.append(number)
+    return encoded_words
+
+
+def get_project_root() -> Path:
+    return Path(__file__).parent
 
 if __name__ == '__main__':
     xs = [[i for i in range(10)] for _ in range(2)]

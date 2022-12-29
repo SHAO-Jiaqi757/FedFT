@@ -4,7 +4,7 @@ from evaluate_module.evaluate_module_abc import EvaluateModuleABC
 
 
 class EvaluateModule(EvaluateModuleABC):
-    def __init__(self,top_k, evaluate_type: str = "NDCG"):
+    def __init__(self,top_k, evaluate_type: str = "F1"):
         """_summary_
 
         Args:
@@ -35,6 +35,23 @@ class EvaluateModule(EvaluateModuleABC):
 
         f1 = 2*hit/(len(estimate_top_k)+len(truth_top_k))
         return f1
+    def recall(self, truth_top_k, estimate_top_k):
+        """_summary_
+
+        Args:
+            truth_top_k (list): The real top k heavy hitters
+            estimate_top_k (list): Estimated top k heavy hitters
+            k (int): top-k heavy hitters
+        Returns:
+            float: Recall
+        """
+        top_k = self.top_k
+        print(f"Find {len(estimate_top_k)} top-k heavy hitters")
+        truth_top_k = truth_top_k[:top_k]
+        hit = 0
+        for hitter in estimate_top_k: 
+            if hitter in truth_top_k: hit += 1
+        return hit/len(truth_top_k)
 
     def __DCG(self,estimate_top_k: List, rel:Dict) -> float:
         """_summary_
@@ -77,3 +94,5 @@ class EvaluateModule(EvaluateModuleABC):
             return self.NDCG(truth_top_k, estimate_top_k)
         elif self.evaluate_type == "F1":
             return self.F1(truth_top_k, estimate_top_k)
+        elif self.evaluate_type == "recall":
+            return self.recall(truth_top_k, estimate_top_k)

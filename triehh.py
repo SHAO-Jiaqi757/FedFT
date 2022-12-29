@@ -21,6 +21,7 @@ protocol presented in Algorithm 1 of our AISTATS 2020 submission.
 
 import math
 import os
+import pickle
 import random
 import numpy as np
 from typing import List
@@ -206,21 +207,21 @@ if __name__ == '__main__':
     n = 2000
 
     m = 64
-    k = 8
-    init_varepsilon = 0.5
-    step_varepsilon = 0.6
-    max_varepsilon = 9
+    k = 6
+    init_varepsilon = 0.2
+    step_varepsilon = 0.4
+    max_varepsilon = 6
     iterations = 32 
 
     round = 50
 
-    n = 2184
+    n = 99411
     save_path_dir = f""  # result path 
-    truth_top_k, clients = load_clients(filename=f"./dataset/zipf_{n}.txt", k=k)  # load clients from .txt
+    truth_top_k, clients = load_clients(filename=f"./dataset/triehh_clients.txt", k=k)  # load clients from .txt
 
     delta = 1/(n**2)
 
-    
+    save_path_dir = f"results/connectionloss_{n}"
     evaluate_module_type = "F1" # ["NDCG", "F1"]
 
     server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, \
@@ -229,6 +230,9 @@ if __name__ == '__main__':
     # server.server_run()
     x, y = server.server_run_plot_varepsilon(
         init_varepsilon,  step_varepsilon, max_varepsilon)
-    print([x, y])
+        
+    with open(os.path.join(save_path_dir, f"triehh_cls0.0_{evaluate_module_type}"), 'wb') as f:
+        pickle.dump([x, y], f) 
+
     # visualize_frequency(server.clients, server.C_truth, server.client_distribution_type)
     
