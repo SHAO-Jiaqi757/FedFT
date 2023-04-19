@@ -135,7 +135,7 @@ def fed_ft_aggregation(n: int, clients: list, k: int, global_truth_top_k: list, 
             if len(good_hhs) == k: break
         # good_hhs = good_hhs[:k]
         print("global truth_top_k: ", global_truth_top_k)
-        evaluate_module = EvaluateModule(k, evaluate_type)
+        evaluate_module = EvaluateModule(evaluate_type)
         score = evaluate_module.evaluate(global_truth_top_k, good_hhs)
         print("finall hhs: ", good_hhs, " score:", score)
 

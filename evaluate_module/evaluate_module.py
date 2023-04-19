@@ -4,14 +4,13 @@ from evaluate_module.evaluate_module_abc import EvaluateModuleABC
 
 
 class EvaluateModule(EvaluateModuleABC):
-    def __init__(self,top_k, evaluate_type: str = "F1"):
+    def __init__(self, evaluate_type: str = "F1"):
         """_summary_
 
         Args:
             top_k (int): for `top-k` heavy hitters
             evaluate_type (str, optional): _description_. Defaults to "NDCG".
         """
-        self.top_k = top_k
         self.evaluate_type = evaluate_type
 
     def F1(self, truth_top_k: List, estimate_top_k:List):
@@ -29,7 +28,7 @@ class EvaluateModule(EvaluateModuleABC):
             return 0
 
         hit = 0
-
+        
         for hitter in estimate_top_k: 
             if hitter in truth_top_k: hit += 1
 
@@ -45,7 +44,7 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             float: Recall
         """
-        top_k = self.top_k
+        top_k = len(truth_top_k)
         print(f"Find {len(estimate_top_k)} top-k heavy hitters")
         truth_top_k = truth_top_k[:top_k]
         hit = 0

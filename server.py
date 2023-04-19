@@ -41,7 +41,7 @@ class FAServerPEM():
         self.clients = clients
 
         self.evaluate_type = evaluate_type
-        self.evaluate_module = EvaluateModule(self.k, self.evaluate_type)
+        self.evaluate_module = EvaluateModule( self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform", "normal"]
         self.__available_privacy_mechanism_type = ["GRR", "None", "GRR_X", "GRRX"]
