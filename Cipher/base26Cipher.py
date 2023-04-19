@@ -40,7 +40,10 @@ def encode_word(word):
     result = 0
     for indx, char in enumerate(word):
         p = word_len - indx - 1
-        result += int(encoder[char])*26**p
+        try:
+            result += int(encoder[char])*26**p
+        except:
+            continue
     return result
 
 def decode_word(number):

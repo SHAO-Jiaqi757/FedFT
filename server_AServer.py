@@ -49,7 +49,7 @@ class Aserver(FAServerPEM):
             delta_s = s_i - s_0
             s_0 = s_i
 
-            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s, optimize=self.optimize)
+            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s)
             mechanism = privacy_module.privacy_mechanism()
             handle_response = privacy_module.handle_response() 
             clients_responses = []
@@ -76,15 +76,15 @@ class Aserver(FAServerPEM):
             C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
             counts = 0
-            if i > 0 and privacy_module.p < 0.5 and self.optimize:
-                threshold = 0 if not C_i_sorted else C_i_sorted[0][1]/ self.k 
-            else: threshold = 0
+            # if i > 0 and privacy_module.p < 0.5 and self.optimize:
+            #     threshold = 0 if not C_i_sorted else C_i_sorted[0][1]/ self.k 
+            # else: threshold = 0
             A_i = {}
             # a  = self.k*2**self.bits_per_iter if i==self.stop_iter else self.k
             a = len(C_i_sorted) if i==self.stop_iter-1 else self.k
             for indx in range(min(a, len(C_i_sorted))):
                 v, count = C_i_sorted[indx]
-                if count > threshold:
+                if count > 0:
                     A_i[v] = 0  # validate v in next iteration
                     if i == self.stop_iter-1: A_i[v] = count
                     counts += count

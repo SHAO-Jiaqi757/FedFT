@@ -23,17 +23,16 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             _type_: f1 score
         """
-        if len(estimate_top_k) == 0:
-            print("No estimated top-k heavy hitters!")
-            return 0
-
-        hit = 0
         
+        top_k = len(truth_top_k)
+        truth_top_k = truth_top_k[:top_k]
+        hit = 0
         for hitter in estimate_top_k: 
             if hitter in truth_top_k: hit += 1
-
-        f1 = 2*hit/(len(estimate_top_k)+len(truth_top_k))
-        return f1
+        precision = hit/len(estimate_top_k)
+        recall = hit/len(truth_top_k)
+        return 2*precision*recall/(precision+recall)
+        
     def recall(self, truth_top_k, estimate_top_k):
         """_summary_
 

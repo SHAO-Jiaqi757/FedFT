@@ -19,7 +19,7 @@ class PrivacyModule(PrivacyModuleABC):
         self.D_keys = sorted(list(D.keys()))
         self.s_i = s_i
         self.required_bits = required_bits
-        self.optimize = optimize
+        self.optimize = False 
       
 
     def privacy_mechanism(self) -> callable:

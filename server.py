@@ -183,15 +183,14 @@ class FAServerPEM():
             # self.varepsilon -= 0.01 * self.rnd
             print("eps", self.varepsilon)
             self.A_i = self.predict_heavy_hitters()
-            # A_i =  ([int(bit_string, 2) for bit_string in self.trie.display_trie(is_get_hhs = True)]) 
-
-            # A_i = [int(i, 2) for i in list(A_i.keys())]
-            # self.C_truth = [int(str(i), 2) for i in self.C_truth]
+            
+            estimate_top_k = list(self.A_i.keys())[:min(self.k, len(self.A_i))]
+            
             print(f"[eps = {self.varepsilon}] Truth ordering: {self.C_truth}")
-            print(f"[eps = {self.varepsilon}] Predicted ordering: {self.A_i}")
-            score = self.evaluate_module.evaluate(self.C_truth, self.A_i)
+            print(f"[eps = {self.varepsilon}] Predicted ordering: {estimate_top_k}")
+            score = self.evaluate_module.evaluate(self.C_truth, estimate_top_k)
             print(f"{self.evaluate_type}= {score}")
-            evaluate_score += self.evaluate_module.evaluate(self.C_truth, self.A_i)
+            evaluate_score += score 
         evaluate_score /= self.round
         print(
             f"[Server End]:: varepsilon = {self.varepsilon}, {self.evaluate_type}= {evaluate_score:.2f}")
