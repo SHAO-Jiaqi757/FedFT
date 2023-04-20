@@ -155,7 +155,7 @@ class FAServerPEM():
                 end_participants = self.n
 
             for client in self.clients[participants: end_participants+1]:
-                prefix_client = client >> (self.m-s_i)
+                prefix_client = client >> (self.m-s_i) # prefix s_i bits of the prefix value.
                 response = mechanism(prefix_client)
                 p = random() 
                 if p >= self.connection_loss_rate:

@@ -11,11 +11,10 @@ from _Tree import TrieNumeric
 from utils import load_clients, blockPrint
 
 blockPrint()
-# random.seed(0)
 class Aserver(FAServerPEM):
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
         clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR_X", evaluate_type: str = "F1", 
-        connection_loss_rate: float = 0, is_uniform_size: bool=False, stop_iter = -1, optimize=True):
+        connection_loss_rate: float = 0, is_uniform_size: bool=False, stop_iter = -1):
             super().__init__(n, m, k, varepsilon, iterations, round, clients, C_truth, privacy_mechanism_type, evaluate_type, connection_loss_rate)
             self.bits_per_iter =ceil(self.m / self.iterations) 
             self.trie = TrieNumeric(self.bits_per_iter, k = k)
@@ -24,7 +23,6 @@ class Aserver(FAServerPEM):
                 self.stop_iter = iterations
             else: 
                 self.stop_iter = stop_iter
-            self.optimize = optimize
     def predict_heavy_hitters(self) -> Dict:
         """_summary_
 
@@ -45,9 +43,9 @@ class Aserver(FAServerPEM):
         bits_per_batch = ceil(self.m / self.iterations)
 
         for i in range(self.stop_iter):
-            s_i = min(s_0 + bits_per_batch, self.m)
-            delta_s = s_i - s_0
-            s_0 = s_i
+            s_i = min(s_0 + bits_per_batch, self.m) # current bit length
+            delta_s = s_i - s_0 # required bit length, e.g. 2bits per iter.
+            s_0 = s_i # last iter's bit length
 
             privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s)
             mechanism = privacy_module.privacy_mechanism()
@@ -75,10 +73,7 @@ class Aserver(FAServerPEM):
 
             C_i_sorted = sorted(C_i.items(), key=lambda x: x[-1], reverse=True)
 
-            counts = 0
-            # if i > 0 and privacy_module.p < 0.5 and self.optimize:
-            #     threshold = 0 if not C_i_sorted else C_i_sorted[0][1]/ self.k 
-            # else: threshold = 0
+
             A_i = {}
             # a  = self.k*2**self.bits_per_iter if i==self.stop_iter else self.k
             a = len(C_i_sorted) if i==self.stop_iter-1 else self.k
@@ -87,14 +82,8 @@ class Aserver(FAServerPEM):
                 if count > 0:
                     A_i[v] = 0  # validate v in next iteration
                     if i == self.stop_iter-1: A_i[v] = count
-                    counts += count
-                    # self.trie.insert((bin(v)[2:]), count) # count is stored in trie
             if not A_i:
                 A_i = {0: 0}
-            # last_high_counts = 0 if not C_i_sorted else C_i_sorted[0][1]
-            # last_counts = counts
         self.accurate_bits = self.m-s_0
-        # for hh in A_i:
-        #     A_i[hh] = A_i[hh]/counts
         return A_i
   

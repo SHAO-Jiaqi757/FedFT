@@ -81,11 +81,12 @@ class PrivacyModule(PrivacyModuleABC):
     
     def __handle_GRR_response(self):
         def __handle_GRR_response_(responses):
+            R = {}
             for response in responses:
                 if response == None: continue
                 
-                self.D[response] = self.D.get(response, 0) + 1
-            return self.D
+                R[response] = R.get(response, 0) + 1
+            return R
 
         return __handle_GRR_response_
 
@@ -113,12 +114,12 @@ class PrivacyModule(PrivacyModuleABC):
             GRR function with argument v
         """
         def GRR_(v: int):
-            prefix_v = v >> self.required_bits
-            suffix_v = v & ((1 << self.required_bits) - 1)
-            if prefix_v not in self.D:
+            prefix_v = v >> self.required_bits # v with self.s_i bits, prefix_v is the prefix matching for the parent nodes.
+            
+            if prefix_v not in self.D: # v not in candidate domain, return None.
                 return
-            prob = random.random()
 
+            prob = random.random()
             if prob < p:
                 return v
             else:
@@ -142,8 +143,7 @@ class PrivacyModule(PrivacyModuleABC):
             GRR_X function with argument v
         """
         def GRR_X(v: int):
-            prefix_v = v >> self.required_bits
-            suffix_v = v & ((1 << self.required_bits) - 1) 
+            # prefix_v = v >> self.required_bits
             prob = random.random()
 
             if prob < p:
@@ -154,12 +154,11 @@ class PrivacyModule(PrivacyModuleABC):
                 for prefix in self.D:
                     for i in range(2**self.required_bits):
                         y = (prefix << self.required_bits) + i
-                        if y == v: 
-                            if prefix_v in self.D:
-                                y =random.randint(0, 2**(self.s_i)) 
-                            else: continue
-
+                        if v == y: # v in candidiate domain 
+                            # if prefix_v in self.D:
+                            y =random.randint(0, 2**(self.s_i))  
                         random_choice_options.append(y)
+                        
                 return random.choice(random_choice_options) # random response
 
     

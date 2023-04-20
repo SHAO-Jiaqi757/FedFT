@@ -16,7 +16,8 @@
 import sys
 # add absolute path of current path's parent to import modules
 sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
- 
+
+CUR_DIR_NAME = sys.path[0].split('/')[-1] 
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -341,7 +342,7 @@ if __name__ == '__main__':
     clients_top_word = np.array(clients_top_word)
     
     # exp_triehh/clients_{file_name}.txt
-    client_path_freqs = f"exp_triehh/clients_freq_{filename}.txt"
+    client_path_freqs = f"{CUR_DIR_NAME}/clients_freq_{filename}.txt"
     with open(client_path_freqs, 'wb') as fp:
       pickle.dump(top_word_frequencies, fp)
 
@@ -354,22 +355,18 @@ if __name__ == '__main__':
 
     # length of longest word
     max_word_len = 10
-    # epsilon for differential privacy
-    epsilon = 2
     # delta for differential privacy
     delta = 2.3e-12
-
     # repeat simulation for num_runs times
-    num_runs = 20
-    
-    simulate_triehh = SimulateTrieHH(client_path,
-        max_word_len=max_word_len, epsilon=epsilon, delta=delta, num_runs=num_runs)
-    
+    num_runs = 40
     
     evals = []
     
+    # epsilon for differential privacy
     for epsilon in [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]:
-      simulate_triehh.set_epsilon(epsilon)
+      simulate_triehh = SimulateTrieHH(client_path,
+        max_word_len=max_word_len, epsilon=epsilon, delta=delta, num_runs=num_runs)
+    
       triehh_heavy_hitters = simulate_triehh.get_heavy_hitters()
     
     
@@ -383,6 +380,6 @@ if __name__ == '__main__':
     
     
     # print -->  a|b ... | ... for a, b in evals, a, b
-    print(f"{n}|{'|'.join([str(round(a, 3)) for a in evals])}|")
+      print(f"{n}|{'|'.join([str(round(a, 3)) for a in evals])}|")
     
         

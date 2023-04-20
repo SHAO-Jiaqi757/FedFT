@@ -19,10 +19,12 @@ import collections
 import csv
 import operator
 import pickle
-import re
+import re, os
 import dict_trie
 import numpy as np
 from exp_generate_words import load_words
+
+CUR_DIR_NAME = os.path.dirname(os.path.abspath(__file__))
 
 def is_valid(word):
   if len(word) < 3 or (word[-1] in [
@@ -99,7 +101,7 @@ def generate_triehh_clients(file_path: str):
   words = load_words(file_path)
   triehh_clients = [add_end_symbol(word) for word in words]
 
-  savefile_path = f'exp_triehh/clients_{file_name}.txt'
+  savefile_path = f'{CUR_DIR_NAME}/clients_{file_name}.txt'
   with open(savefile_path, 'wb') as fp:
     pickle.dump(triehh_clients, fp)
   return savefile_path

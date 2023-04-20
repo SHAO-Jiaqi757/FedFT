@@ -23,7 +23,8 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             _type_: f1 score
         """
-        
+        if len(estimate_top_k) == 0:
+            return 0   
         top_k = len(truth_top_k)
         truth_top_k = truth_top_k[:top_k]
         hit = 0
@@ -31,6 +32,7 @@ class EvaluateModule(EvaluateModuleABC):
             if hitter in truth_top_k: hit += 1
         precision = hit/len(estimate_top_k)
         recall = hit/len(truth_top_k)
+        if precision == 0 and recall == 0: return 0
         return 2*precision*recall/(precision+recall)
         
     def recall(self, truth_top_k, estimate_top_k):
