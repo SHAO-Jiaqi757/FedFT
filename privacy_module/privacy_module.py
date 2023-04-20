@@ -12,14 +12,13 @@ from privacy_module.privacy_module_abc import PrivacyModuleABC
 
 # random.seed(time.time_ns())
 class PrivacyModule(PrivacyModuleABC):
-    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, required_bits = 0, optimize=False):
+    def __init__(self, varepsilon: float, D: Dict = {}, type: str = "GRR", s_i=0, required_bits = 0):
         self.varepsilon = varepsilon
         self.D = D
         self.type = type
         self.D_keys = sorted(list(D.keys()))
         self.s_i = s_i
         self.required_bits = required_bits
-        self.optimize = False 
       
 
     def privacy_mechanism(self) -> callable:
@@ -41,13 +40,7 @@ class PrivacyModule(PrivacyModuleABC):
         elif self.type == "GRR_X":
             d = len(self.D) * 2**self.required_bits + 1
             p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
-            # if self.optimize and p < 0.4 and d > 1: 
-            #     d = len(self.D)*2**self.required_bits
-            #     p = exp(self.varepsilon) / (exp(self.varepsilon)+d-1)
-            #     self.p = p
-            #     self.type = "GRR"
-            #     print("debug:: change to GRR")
-            #     return self.__GRR(p)
+       
             self.p = p
             return self.__GRR_X(p)
         elif self.type == "GRRX":

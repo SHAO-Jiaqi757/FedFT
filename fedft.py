@@ -53,7 +53,7 @@ def fedft_cluster(clients: list, k: int, evaluate_module_type="recall", m=64, it
     # print("[debug]:: n", n)
     server = Aserver(n, m, k, varepsilon, iterations, round, clients=clients, C_truth=[0],
                          evaluate_type=evaluate_module_type, connection_loss_rate=connection_loss_rate,
-                         is_uniform_size=False, optimize=False
+                         is_uniform_size=False
                          )
 
     x_xtf, _ = server.server_run()
