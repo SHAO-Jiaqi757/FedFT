@@ -19,10 +19,13 @@ import collections
 import csv
 import operator
 import pickle
-import re, os
+import re, os, sys
+
+sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
+
 import dict_trie
 import numpy as np
-from exp_generate_words import load_words
+from exp_generate_words import load_words, load_words_count
 
 CUR_DIR_NAME = os.path.dirname(os.path.abspath(__file__))
 
@@ -180,5 +183,38 @@ def main():
   print('top word count:', len(top_word_counts))
 
 
+def get_non_iid_clusters_topk(k):
+  """
+  Return top k heavy hitters among non-iid clusters. 
+  The rule of top k: tops [0] is the top k among the largest cluster, tops [1] is the top k among the second largest cluster, and so on.
+  top_k is the top k among all clusters. e.g. top_k = [tops[0][0], tops[1][0], tops[2][0], tops[3][0], tops[4][0]] (k=4)
+  Args:
+    k: top k among clusters
+    
+  Return: 
+    top_k: top k among all clusters
+  """
+  
+  tops = []
+  top_k = []
+  for n in range(9500, 2001, -1500): 
+    filename = f"words_generate_{n}"
+    file_path_word_counts = f"dataset/words_generate/{filename}_count.txt" 
+    
+    # {'smog:': 244, 'pianist:': 103}
+    word_counts = load_words_count(file_path_word_counts, n)
+    cluster_top_k = list(word_counts.keys())[:k]
+    print(f"cluster{n}_top_k: {cluster_top_k}")
+    tops.append(cluster_top_k)
+  while len(top_k) < k:
+    for top in tops:
+      cur_top = top.pop(0)
+      top_k.append(cur_top)
+
+  return top_k
+    
+
+
 if __name__ == '__main__':
-  main()
+  # print(get_non_iid_clusters_topk(10))
+  pass

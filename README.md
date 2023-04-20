@@ -131,13 +131,23 @@ Top 5 frequent words with count: [('lad', 1023), ('brake', 524), ('tabby', 343),
 
 Combine all the data from the 6 clusters and run the experiments on the combined data. 
 
-Combined (34500 clients): 
-Top 5 frequent words with count: [('lad', cluster 6), ('shadow', cluster 5), ('stockings', cluster 4), ('guitarist', cluster 3), ('brake', cluster 6)]
+Combined (34500 clients of 6 clusters): 
+<!-- Top 5 frequent words : [('lad', cluster 6), ('shadow', cluster 5), ('stockings', cluster 4), ('guitarist', cluster 3), ('brake', cluster 6)]
 
 |Method|$\varepsilon$| 0.5| 1.5| 2.5| 3.5| 4.5| 5.5| 6.5| 7.5| 8.5| 9.5|
 |----|----|----|----|----|----|----|----|----|----|----|----|
-|TrieHH||F1|0.0|0.0|0.1|0.36|0.488|0.677|0.763|0.866|0.875|0.942|
+|TrieHH|F1|0.0|0.0|0.1|0.36|0.488|0.677|0.763|0.866|0.875|0.942|
 |TrieHH|recall| 0.0|0.0|0.06|0.17|0.35|0.47|0.61|0.8|0.88|0.91|
 
+------- -->
+
+Top 5 frequent words: ['lad', 'shadow', 'stockings', 'guitarist', 'cantaloupe']
+
+|Method|$\varepsilon$| 0.5| 1.5| 2.5| 3.5| 4.5| 5.5| 6.5| 7.5| 8.5| 9.5|
+|----|----|----|----|----|----|----|----|----|----|----|----|
+|TrieHH|F1|0.0|0.0|0.117|0.282|0.481|0.65|0.692|0.722|0.761|0.772|
+|TrieHH|recall|0.0|0.0|0.035|0.2|0.34|0.455|0.56|0.655|0.72|0.76|
+|FedFT|F1|0.00|0.03|0.76|0.79|0.88|0.91|0.93|0.92|0.92|0.96|
+|FedFT|recall|0.00|0.03|0.78|0.83|0.90|0.91|0.88|0.93|0.90|0.92|
 
 

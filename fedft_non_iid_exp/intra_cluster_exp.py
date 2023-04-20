@@ -2,60 +2,17 @@
 This experiment used to compare different models in the intra-cluster setting.
 On 6 datasets with 2000-9500 clients, seperatively.
 """
-import os, sys, random
-import pickle
+import sys
 sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
  
 from server import FAServerPEM
 from server_AServer import Aserver
 from Cipher import *
 from utils import enablePrint, blockPrint
-from exp_generate_words import load_words, load_words_count
+from exp_generate_words import load_words
 
 enablePrint()
 DATA_PATH = "dataset/words_generate/"
-
-
-def load_clients(clients: list, top_k_words: list, k = sys.maxsize, restriction=-1, encode=True):
-
-    if not encode:
-        return top_k_words, clients
-        
-    for i in range(len(clients)):
-        number = encode_word(clients[i])
-        clients[i] = number 
-    for i in range(len(top_k_words)):
-        word = top_k_words[i]
-        number = encode_word(word)
-        top_k_words[i] = number 
-     
-    return top_k_words, clients
-
-
-def encode_file_initate():
-    for n in range(2000, 10001, 1500):
-        filename = f"words_generate_{n}"
-        
-        encode_words(filename, 5)
-
-
-def encode_words(filename, k: int):
-    
-    client_path = f" {DATA_PATH}{filename}.txt"
-    freq_path = f" {DATA_PATH}{filename}_count.txt"
-    
-    words = load_words(client_path)
-    word_counts = load_words_count(freq_path, k)
-    top_k_words = list(word_counts.keys())
-    top_k_encode_words, encode_words = load_clients(words, top_k_words=top_k_words, encode=True)
-    
-    with open(f" {DATA_PATH}{filename}_encode.txt", "w") as f:
-        for word in encode_words:
-            f.write(str(word) + " ")
-            
-    with open(f" {DATA_PATH}{filename}_encode_top_{k}.txt", "w") as f:
-        for word in top_k_encode_words:
-            f.write(str(word) + " ")
 
 
 
@@ -64,6 +21,8 @@ if __name__ == '__main__':
     save_path_dir = f""  # result path 
     m = 48
     k = 5
+    
+    # encode_file_initate(k)
     
     init_varepsilon = 0.5
     step_varepsilon = 1
