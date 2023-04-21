@@ -8,7 +8,7 @@ from typing import Dict, List
 from privacy_module import PrivacyModule
 from server import FAServerPEM
 from _Tree import TrieNumeric
-from utils import load_clients, blockPrint
+from utils import load_clients, blockPrint, enablePrint
 
 blockPrint()
 class Aserver(FAServerPEM):
@@ -49,6 +49,11 @@ class Aserver(FAServerPEM):
 
             privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s)
             mechanism = privacy_module.privacy_mechanism()
+            
+            if privacy_module.p <= 0.5:
+                privacy_module = PrivacyModule(self.varepsilon, A_i, type="GRR",s_i = s_i, required_bits = delta_s)
+                mechanism = privacy_module.privacy_mechanism() 
+                
             handle_response = privacy_module.handle_response() 
             clients_responses = []
 
