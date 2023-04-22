@@ -48,8 +48,6 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
       
     for i in range(len(results)):
         result_i = json.loads(results[i])
-        print(result_i)
-        
         predict_hh = result_i['predict_hh']
         
         for hh in predict_hh:
@@ -62,16 +60,17 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
 
         # aggregate results
     candidates_among_clusters = sorted(candidates_among_clusters.items(),
-                           key=lambda x: x[1], reverse=True)
+                           key=lambda x: x[1], reverse=False)
 
     candidates_n = len(candidates_among_clusters)
+    
+    
     good_hhs = []
     bad_hh = []
-    # threshold = 5
     for i in range(candidates_n):
         x = int(candidates_among_clusters[i][0])
         if x in bad_hh:
-            continue
+            continue        
         threshold = (len(bin(x)) - 2)/2
         for j in range(candidates_n-1, i, -1):
 
@@ -84,7 +83,6 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
             # print(f"{x} {y}: distance = {dis}")
         good_hhs.append(x)
         if len(good_hhs) == k: break
-    # good_hhs = good_hhs[:k]
     print("global truth_top_k: ", global_truth_top_k)
     evaluate_module = EvaluateModule(evaluate_type)
     score = evaluate_module.evaluate(global_truth_top_k, good_hhs)
@@ -114,9 +112,10 @@ def load_clusters(k=5):
 if __name__ == '__main__':
 
     m = 48
-    k = 5
+    k = 10
+    # encode_file_initate(k)
     
-    init_varepsilon = 0.5
+    init_varepsilon = 8.5
     step_varepsilon = 1 
     max_varepsilon = 9.6
     iterations = 24
@@ -124,10 +123,11 @@ if __name__ == '__main__':
     runs = 40
 
     clients, truth_hh = load_clusters(k) 
+    print("truth_hh: ", truth_hh)
 
     results = {}
 
-    evaluate_module_type = "F1" # ["recall", "F1"]
+    evaluate_module_type = "recall" # ["recall", "F1"]
     
     for varepsilon in np.arange(init_varepsilon, max_varepsilon, step_varepsilon):
          
@@ -144,6 +144,7 @@ if __name__ == '__main__':
         results[varepsilon] = score
         print(f"varepsilon: {varepsilon} score: {score}")
     
-    with open(f"{DATA_PATH}inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
-        json.dump(results, f)
+    # with open(f"inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
+    #     json.dump(results, f)
+    print(",".join([ str(round(x, 3)) for x in list(results.values())]))
     
