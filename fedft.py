@@ -106,8 +106,7 @@ def fed_ft_aggregation(n: int, clients: list, k: int, global_truth_top_k: list, 
             predict_hh = result_i['predict_hh']
 
             for hh in predict_hh:
-                incre = tanh(0.2*k + predict_hh[hh])
-                # incre = 1
+                incre = 1
                 noise_hhs[hh] = noise_hhs.get(hh, 0) + incre
 
         # aggregate results

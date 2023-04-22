@@ -4,12 +4,12 @@ from joblib import Parallel, delayed
 import os, sys, random
 import numpy as np
 from _utils import encode_file_initate, get_non_iid_clusters_topk
-from utils import blockPrint, enablePrint
+from utils import blockPrint, enablePrint, encode_words
 sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
  
 from tqdm import tqdm
 from evaluate_module import EvaluateModule
-from exp_generate_words import load_words
+from exp_generate_words import load_words, load_words_count
 
 from fedft import fedft_cluster, std_out_err_redirect_tqdm, distance
 from intra_cluster_exp import DATA_PATH
@@ -43,9 +43,6 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
 
     candidates_among_clusters = {}
         
-    # test:
-    weights = [len(clients[i])/total_clients for i in range(clusters)]
-      
     for i in range(len(results)):
         result_i = json.loads(results[i])
         predict_hh = result_i['predict_hh']
@@ -54,13 +51,12 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
             x = predict_hh[hh] 
             if x <= k:
                 continue
-            # incre = x * (1 - np.exp(-x)) * (total_clients/len(clients[i]))**(1/2)
-            incre = x/len(clients[i]) * weights[i]
+            incre = x/sum(predict_hh.values())
             candidates_among_clusters[hh] = candidates_among_clusters.get(hh, 0) + incre
 
         # aggregate results
     candidates_among_clusters = sorted(candidates_among_clusters.items(),
-                           key=lambda x: x[1], reverse=False)
+                           key=lambda x: x[1], reverse=True)
 
     candidates_n = len(candidates_among_clusters)
     
@@ -71,11 +67,10 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
         x = int(candidates_among_clusters[i][0])
         if x in bad_hh:
             continue        
-        threshold = (len(bin(x)) - 2)/2
-        for j in range(candidates_n-1, i, -1):
+        for j in range(i+1, candidates_n):
 
             y = int(candidates_among_clusters[j][0])
-
+            threshold = (min(len(bin(x)), len(bin(y))) - 2)/2
             dis = distance(x, y)
             if dis <= threshold and candidates_n - len(bad_hh) > k:
                 bad_hh.append(y)
@@ -91,7 +86,6 @@ def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsil
     print("Done!")
     return score
 
-
 def load_clusters(k=5):
     
     clusters_ = []
@@ -106,16 +100,17 @@ def load_clusters(k=5):
         cluster_top_k.append(cluster_truth_top_k)
         
     truth_hh = get_non_iid_clusters_topk(cluster_top_k, k) 
+    # truth_hh = get_bayes_shrinkage_topk(k)
     
     return clusters_, truth_hh
 
 if __name__ == '__main__':
 
     m = 48
-    k = 10
+    k = 5
     # encode_file_initate(k)
     
-    init_varepsilon = 8.5
+    init_varepsilon = 0.5
     step_varepsilon = 1 
     max_varepsilon = 9.6
     iterations = 24
@@ -127,7 +122,7 @@ if __name__ == '__main__':
 
     results = {}
 
-    evaluate_module_type = "recall" # ["recall", "F1"]
+    evaluate_module_type = "F1" # ["recall", "F1"]
     
     for varepsilon in np.arange(init_varepsilon, max_varepsilon, step_varepsilon):
          
