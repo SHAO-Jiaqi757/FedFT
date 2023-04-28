@@ -14,6 +14,8 @@ from exp_generate_words import load_words, load_words_count
 from fedft import fedft_cluster, std_out_err_redirect_tqdm, distance
 from intra_cluster_exp import DATA_PATH
 
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def fed_ft_aggregation(clients: list, k: int, global_truth_top_k: list, varepsilon: float = 2, evaluate_type="recall", m=64, iterations=32, connection_loss_rate=0):
     """_summary_
 
@@ -122,7 +124,7 @@ if __name__ == '__main__':
 
     results = {}
 
-    evaluate_module_type = "F1" # ["recall", "F1"]
+    evaluate_module_type = "recall" # ["recall", "F1"]
     
     for varepsilon in np.arange(init_varepsilon, max_varepsilon, step_varepsilon):
          
@@ -139,7 +141,6 @@ if __name__ == '__main__':
         results[varepsilon] = score
         print(f"varepsilon: {varepsilon} score: {score}")
     
-    # with open(f"inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
-    #     json.dump(results, f)
-    print(",".join([ str(round(x, 3)) for x in list(results.values())]))
+    with open(f"{CURR_DIR}/inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
+        json.dump(results, f)
     
