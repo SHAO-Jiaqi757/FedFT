@@ -202,7 +202,7 @@ def get_non_iid_clusters_topk(k):
     file_path_word_counts = f"dataset/words_generate/{filename}_count.txt" 
     
     # {'smog:': 244, 'pianist:': 103}
-    word_counts = load_words_count(file_path_word_counts, n)
+    word_counts = load_words_count(file_path_word_counts, k)
     cluster_top_k = list(word_counts.keys())[:k]
     print(f"cluster{n}_top_k: {cluster_top_k}")
     tops.append(cluster_top_k)
