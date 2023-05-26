@@ -101,10 +101,15 @@ def generate_triehh_clients(file_path: str):
   
   
   file_name = file_path.split('/')[-1].split('.')[0]
+  savefile_path = f'{CUR_DIR_NAME}/clients_{file_name}.txt'
+  if os.path.exists(savefile_path):
+    print(f'File {savefile_path} already exists.')
+    return savefile_path
+  
   words = load_words(file_path)
   triehh_clients = [add_end_symbol(word) for word in words]
 
-  savefile_path = f'{CUR_DIR_NAME}/clients_{file_name}.txt'
+
   with open(savefile_path, 'wb') as fp:
     pickle.dump(triehh_clients, fp)
   return savefile_path
@@ -183,7 +188,7 @@ def main():
   print('top word count:', len(top_word_counts))
 
 
-def get_non_iid_clusters_topk(k):
+def _get_non_iid_clusters_topk(k):
   """
   Return top k heavy hitters among non-iid clusters. 
   The rule of top k: tops [0] is the top k among the largest cluster, tops [1] is the top k among the second largest cluster, and so on.
@@ -195,21 +200,20 @@ def get_non_iid_clusters_topk(k):
     top_k: top k among all clusters
   """
   
-  tops = []
-  top_k = []
+  word_counts_main = {}
   for n in range(9500, 2001, -1500): 
     filename = f"words_generate_{n}"
     file_path_word_counts = f"dataset/words_generate/{filename}_count.txt" 
     
     # {'smog:': 244, 'pianist:': 103}
     word_counts = load_words_count(file_path_word_counts, k)
-    cluster_top_k = list(word_counts.keys())[:k]
-    print(f"cluster{n}_top_k: {cluster_top_k}")
-    tops.append(cluster_top_k)
-  while len(top_k) < k:
-    for top in tops:
-      cur_top = top.pop(0)
-      top_k.append(cur_top)
+    counts_n = sum(word_counts.values())
+    for key, v in word_counts.items():
+      word_counts_main[key] = word_counts_main.get(key, 0) + v/counts_n
+    
+
+    sorted_word_counts = sorted(word_counts_main.items(), key=lambda x: x[1], reverse=True)
+    top_k= [sorted_word_counts[i][0] for i in range(k)]
 
   return top_k
     

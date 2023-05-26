@@ -2,7 +2,7 @@
 PEM
 """
 from math import ceil, log
-from random import random, uniform
+import random
 from typing import Dict, List
 from evaluate_module import EvaluateModule
 from privacy_module.privacy_module import PrivacyModule
@@ -10,7 +10,7 @@ from utils import load_clients, plot_single_line, sort_by_frequency
 import numpy as np
 
 np.random.seed(0)
-
+random.seed(0)
 class FAServerPEM():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
     clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", 
@@ -157,7 +157,7 @@ class FAServerPEM():
             for client in self.clients[participants: end_participants+1]:
                 prefix_client = client >> (self.m-s_i) # prefix s_i bits of the prefix value.
                 response = mechanism(prefix_client)
-                p = random() 
+                p = random.random() 
                 if p >= self.connection_loss_rate:
                     clients_responses.append(response)
             participants = end_participants 

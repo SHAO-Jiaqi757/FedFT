@@ -90,5 +90,13 @@ class Aserver(FAServerPEM):
             if not A_i:
                 A_i = {0: 0}
         self.accurate_bits = self.m-s_0
+        if self.accurate_bits:
+            print(f"accurate bits: {self.accurate_bits}")
+            A_tmp = A_i
+            A_i = {}
+            for i in A_tmp.keys():
+                # change key  A_i[i << self.accurate_bits] = A_i[i]
+                A_i[i << self.accurate_bits] = A_tmp[i]
+
         return A_i
   

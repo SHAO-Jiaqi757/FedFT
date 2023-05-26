@@ -95,13 +95,14 @@ def load_clusters(k=5):
     cluster_top_k = []
     for n in range(2000, 10001, 1500):
         filename = f"words_generate_{n}"
-        cluster_truth_top_k = list(map(int, load_words(f"{DATA_PATH}{filename}_encode_top_{k}.txt")))
+        # cluster_truth_top_k = list(map(int, load_words(f"{DATA_PATH}{filename}_encode_top_{k}.txt")))
         cluster = list(map(int,load_words(f"{DATA_PATH}{filename}_encode.txt")))
         
         clusters_.append(cluster)
-        cluster_top_k.append(cluster_truth_top_k)
+        # cluster_top_k.append(cluster_truth_top_k)
         
-    truth_hh = get_non_iid_clusters_topk(cluster_top_k, k) 
+    truth_hh = get_non_iid_clusters_topk(k) 
+    truth_hh = encode_words(truth_hh)
     # truth_hh = get_bayes_shrinkage_topk(k)
     
     return clusters_, truth_hh
@@ -109,38 +110,41 @@ def load_clusters(k=5):
 if __name__ == '__main__':
 
     m = 48
-    k = 5
+    k =6 
     # encode_file_initate(k)
     
     init_varepsilon = 0.5
     step_varepsilon = 1 
     max_varepsilon = 9.6
     iterations = 24
-
+    
     runs = 40
 
     clients, truth_hh = load_clusters(k) 
     print("truth_hh: ", truth_hh)
 
-    results = {}
+    results = [] 
 
-    evaluate_module_type = "recall" # ["recall", "F1"]
-    
-    for varepsilon in np.arange(init_varepsilon, max_varepsilon, step_varepsilon):
-         
-        score_fedft = 0
-        blockPrint() 
-        for rnd in range(runs):
-            score = fed_ft_aggregation(clients, k, global_truth_top_k=truth_hh, varepsilon=varepsilon,
-                                    \
-                evaluate_type = evaluate_module_type, m=m, iterations=iterations)
-            score_fedft += score
-        score = score_fedft/runs
-        enablePrint()
+    for evaluate_module_type in ["recall", "F1"]:
+        scores = []
+        for varepsilon in np.arange(init_varepsilon, max_varepsilon, step_varepsilon):
+            score_fedft = 0
+            blockPrint() 
+            for rnd in range(runs):
+                score = fed_ft_aggregation(clients, k, global_truth_top_k=truth_hh, varepsilon=varepsilon,
+                                        \
+                    evaluate_type = evaluate_module_type, m=m, iterations=iterations)
+                score_fedft += score
+            score = score_fedft/runs
+            scores.append(score)
+            enablePrint()
         
-        results[varepsilon] = score
-        print(f"varepsilon: {varepsilon} score: {score}")
-    
-    with open(f"{CURR_DIR}/inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
-        json.dump(results, f)
+        results.append(["FedFT", evaluate_module_type, *scores])
+            
+    import pandas as pd
+    pd.DataFrame(results, \
+        columns= ["Method", "varepsilon",  0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5,7.5, 8.5, 9.5]
+        ).to_csv(f"{CURR_DIR}/inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.csv")
+    # with open(f"{CURR_DIR}/inter_cluster_exp_{evaluate_module_type}_m_{m}_k_{k}_iter_{iterations}.json", "w") as f:
+    #     json.dump(results, f)
     

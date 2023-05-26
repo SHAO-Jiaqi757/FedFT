@@ -5,49 +5,42 @@ Returns:
 """
 import os
 import pickle
-from time import sleep
-from tqdm import tqdm
+import pandas as pd
 from fedft import fed_ft_aggregation
-from server import FAServerPEM
-from server_AServer import Aserver
-from triehh import SimulateTrieHH
+from triehh_non_iid_exp import * 
 from Cipher import *
+from triehh_non_iid_exp.main import evaluate
 from utils import blockPrint,enablePrint, plot, load_clients, pr_N_mostFrequentNumber, encode_word
 
 
-
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == '__main__':
 
-    # blockPrint()
-    enablePrint()
-    m = 64
-    k = 6
-    init_varepsilon = 2
-    step_varepsilon = 0.4
-    max_varepsilon = 2.2
-    iterations = 32 
-
-    round = 20 
-
-    # n = 99413
-    # n = 659596 
+    blockPrint()
+    # enablePrint()
+    m = 48 
+    min_k = 6
+    max_k = 37
+    epsilon = 2
+    num_runs = 20 
+    
+    # length of longest word
+    max_word_len = 10
+    # delta for differential privacy
+    delta = 2.3e-12
     cluster_n = 5000
-    # origin_clients_file = f"./dataset/sentiment140_user_clean.txt"
-    # encoded_clients_file = f"./dataset/sentiment140_user_clean_encode.txt"
-    # topk_words_file = f"./dataset/sentiment140_user_clean_topk.txt"
-    # save_filename = f"./results/sentiment140_user_clean_var_k"
     origin_clients_file = f"./dataset/Reddit_clean.txt"
     encoded_clients_file = f"./dataset/Reddit_clean_encode.txt"
     topk_words_file = f"./dataset/Reddit_clean_topk.txt"
     save_filename = f"./results/Reddit_clean_var_k"
-    # n = 100000
-    # origin_clients_file = f"./dataset/zipf_clean_{n}.txt"
-    # encoded_clients_file = f"./dataset/zipf_clean_{n}_encode.txt"
-    # topk_words_file = f"./dataset/zipf_clean_{n}_topk.txt"
-    # save_filename = f"./results/zipf_clean_{n}_var_k"
 
+    client_path = generate_triehh_clients("./dataset/Reddit_clean.txt")  
+    word_counts = load_words_count("./dataset/Reddit_clean_count.txt")
     
+    with open(client_path, 'rb') as fp:
+      clients_top_word = pickle.load(fp)
+
     try:
         with open(encoded_clients_file, "rb") as f:
             clients = pickle.load(f)
@@ -71,89 +64,46 @@ if __name__ == '__main__':
         
     n = len(clients)
 
-    results = {}
-   
-    while k  < 30:
-        truth_top_k = sorted_words[:k]
-        for i in range(len(truth_top_k)):
-            number = encode_word(truth_top_k[i])
-            truth_top_k[i] = number 
+    results = []
+    for evaluate_module_type in ["F1", "recall"]: 
+        for k in range(min_k, max_k, 6):
+            truth_top_k = sorted_words[:k]
+            for i in range(len(truth_top_k)):
+                number = encode_word(truth_top_k[i])
+                truth_top_k[i] = number 
+                
+            evaluate_module_type = "recall" # ["recall", "F1"]
             
-        evaluate_module_type = "recall" # ["recall", "F1"]
-        privacy_mechanism_type = "GRR" # ["GRR", "None","OUE"]
+            score_fedft = 0
+            for rnd in range(num_runs):
+                score = fed_ft_aggregation(n, clients, k, varepsilon=epsilon, global_truth_top_k=truth_top_k, evaluate_type = evaluate_module_type, cluster_size=cluster_n)
+                score_fedft += score
+            score = score_fedft/num_runs
 
-       # ----Standard Tree----( GRR + Uniform + Trie) #
+            results.append(["FedFT", k, evaluate_module_type, epsilon, score])
 
-        server = FAServerPEM(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-            privacy_mechanism_type = privacy_mechanism_type, evaluate_type = evaluate_module_type
-        )
-        _, y_pem = server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-        
-        print(y_pem)
+        # ---- TrieHH ----
+            truth_triehh = list(word_counts.keys())[:k]
 
-        if "PEM" not in results:
-            results["PEM"] = {'x': [], 'y': []}
-        results["PEM"]['x'].append(k)
-        results["PEM"]['y'].append(y_pem[0])
-         
+            simulate_triehh = SimulateTrieHH(client_path, max_word_len=10, epsilon=epsilon, delta=delta, num_runs=num_runs)
+            triehh_heavy_hitters = simulate_triehh.get_heavy_hitters()
+            
+            score_triehh, _ = evaluate(evaluate_module_type, triehh_heavy_hitters, truth_triehh)
+            results.append(["TrieHH", k, evaluate_module_type, epsilon, score_triehh])
 
-    #    ----FedFT----( GRR_X + Trie + client_size_fitting + optimization) #
-    
-        # server = FedFTServer(n, m, k, init_varepsilon, iterations, round, clients=clients, C_truth=truth_top_k, \
-        #       evaluate_type=evaluate_module_type,
-        #     is_uniform_size=False, optimize=False
-        # )
-    
-        # _, y_xtf = server.server_run_plot_varepsilon(
-        # init_varepsilon,  step_varepsilon, max_varepsilon)
-        # score = y_xtf[0]
-        
-        score_fedft = 0
-        for rnd in range(round):
-            score = fed_ft_aggregation(n, clients, k, global_truth_top_k=truth_top_k, evaluate_type = evaluate_module_type, cluster_size=cluster_n)
-            score_fedft += score
-        score = score_fedft/round
-
-        if "FedFT" not in results:
-            results["FedFT"] = {'y': [], 'x': []}
-        results["FedFT"]['x'].append(k)
-        results["FedFT"]['y'].append(score)
-        
-    
-    # ---- TrieHH ----
-        server = SimulateTrieHH(n, m, k, init_varepsilon, iterations, round, \
-        clients=clients, C_truth=truth_top_k,
-            delta= 1/(n**2), evaluate_type=evaluate_module_type)
-        _, y_triehh = server.server_run_plot_varepsilon(
-        init_varepsilon,  step_varepsilon, max_varepsilon)
-        
-        if "TrieHH" not in results:
-            results["TrieHH"] = {"x": [], "y": []}
-        # results["TrieHH"][k] = y_triehh
-        results["TrieHH"]['x'].append(k)
-        results["TrieHH"]['y'].append(y_triehh[0])
+            
+            
+    pd.DataFrame(results,
+                 columns=["Method", "k", "metrics", "epsilon", "metric_value"]).to_csv(f"{CURR_DIR}/inter_var_k_{min_k}_{max_k}_epsilon_{epsilon}.csv")
         
 
-        k += 3
+            
+            
+            
+            
+            
+
+
+
+
         
-
-    try:
-        with open(save_filename+".txt", 'rb') as f:
-            res = pickle.load(f)
-           
-        results['PEM'] = res["PEM"]
-        results["TrieHH"] = res["TrieHH"]
-        
-        results["FedFT"] = res["FedFT"]
-    except Exception: # save results
-        with open(save_filename+".txt", 'wb') as f:
-            pickle.dump(results, f)  
-
-    finally:        
-        with open(save_filename+".txt", 'wb') as f:
-            pickle.dump(results, f) 
-
-    plot(results, save_filename=save_filename, x_label='k', y_label=evaluate_module_type, line_type="*-")
-
-    

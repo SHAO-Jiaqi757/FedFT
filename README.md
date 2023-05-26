@@ -22,6 +22,11 @@ Non-IID -- heterogeneous and unbalanced data: different clusters have different 
 |9500| 1778|
 
 
+## Intra-cluster Experiments
+We compared the performance of five methods: PEM, GTF, XTU, XTF (FedFT), and TrieHH. 
+
+Ablation experiment:
+
 | Model | GRR/$GRR_X$ | Uniform/Incremental client-size |
 | --- | --- | --- |
 | PEM (GTU) | GRR | Uniform |
@@ -29,8 +34,6 @@ Non-IID -- heterogeneous and unbalanced data: different clusters have different 
 | XTU | $GRR_X$ | Uniform |
 | FedFT (XTF) | $GRR_X$ | Incremental |
 
-
-## Intra-cluster Experiments
 ```
 Settings: 20 runs to get the average accuracy
  

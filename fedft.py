@@ -12,7 +12,7 @@ from server_AServer import Aserver
 from Cipher import *
 from utils import distance, load_clients, pr_N_mostFrequentNumber, encode_words
 
-
+random.seed(0)
 @contextlib.contextmanager
 def std_out_err_redirect_tqdm():
     orig_out_err = sys.stdout, sys.stderr
@@ -27,7 +27,7 @@ def std_out_err_redirect_tqdm():
         sys.stdout, sys.stderr = orig_out_err
 
 
-def fedft_cluster(clients: list, k: int, evaluate_module_type="recall", m=64, iterations=32, varepsilon=2, connection_loss_rate=0):
+def fedft_cluster(clients: list, k: int, evaluate_module_type="recall", m=64, iterations=32, varepsilon=2, connection_loss_rate=0, stop_iter=-1):
     """_summary_
 
     Args:
@@ -43,17 +43,12 @@ def fedft_cluster(clients: list, k: int, evaluate_module_type="recall", m=64, it
     # encode clients into bitstrings
     round = 1
 
-    # truth_top_k = pr_N_mostFrequentNumber(clients, k)
-
-    # clients = encode_words(clients)
-
-    # truth_top_k = encode_words(truth_top_k)
-
     n = len(clients)
     # print("[debug]:: n", n)
     server = Aserver(n, m, k, varepsilon, iterations, round, clients=clients, C_truth=[0],
                          evaluate_type=evaluate_module_type, connection_loss_rate=connection_loss_rate,
-                         is_uniform_size=False
+                         is_uniform_size=False, 
+                            stop_iter=stop_iter
                          )
 
     x_xtf, _ = server.server_run()

@@ -17,6 +17,84 @@ def sort_by_frequency(array, k=sys.maxsize) -> list:
     return np.argsort(-np.bincount(array))[:k]
 
 
+def load_words(file_path):
+    with open(file_path, "r") as f:
+        words = f.read().strip().split(" ")
+    return words
+
+def load_words_count(file_path, top_k=-1):
+    # file {word: count} sorted by count
+    with open(file_path, "r") as f:
+        # top_k lines
+        words = f.readlines()
+        if top_k != -1:
+            words = words[:top_k]
+        words = [word.split(":") for word in words]
+        words = {word[0]: int(word[1]) for word in words}
+    
+    return words
+
+
+def encode_file_initate(k=5, filename="", datadir=""):
+    # def test():
+    #     print("test")
+    #     freq_path = f"{datadir}{filename}_count.txt"
+    #     save_path_encoded = f"{datadir}{filename}_encode.txt"
+    #     word_counts = load_words_count(freq_path, 10)
+    #     test_10 = f"{datadir}{filename}_remove10_encode.txt"
+    #     unique_words, unique_word_counts = list(word_counts.keys()), list(word_counts.values())
+        
+    #     for i in range(len(unique_words)):
+    #         word = unique_words[i]
+    #         number = encode_word(word)
+    #         unique_words[i] = number  
+        
+    #     # copy test_10 to save_path_encoded 
+    #     with open(test_10, "r") as f:
+    #         words = f.read().strip().split(" ")
+    #     for word, word_count in zip(unique_words, unique_word_counts):
+    #         words += [str(word)] * word_count
+    #     with open(save_path_encoded, "w") as f:
+    #         f.write(" ".join(words))
+
+    def encode_words(filename, k: int, datadir) :
+        
+        freq_path = f"{datadir}{filename}_count.txt"
+        word_counts = load_words_count(freq_path)
+        save_path_encoded = f"{datadir}{filename}_encode.txt"
+        save_path_encoded_topk =f"{datadir}{filename}_encode_top_{k}.txt" 
+        if os.path.exists(save_path_encoded) and os.path.exists(save_path_encoded_topk):
+            print("file already exist")
+            return 
+        # if file f"{datadir}{filename}_encode.txt" not exist
+        if not os.path.exists(save_path_encoded):
+            unique_words, unique_word_counts = list(word_counts.keys()), list(word_counts.values())
+        else: 
+            unique_words, unique_word_counts = list(word_counts.keys())[:k], list(word_counts.values())[:k] 
+        
+        for i in range(len(unique_words)):
+            word = unique_words[i]
+            number = encode_word(word)
+            unique_words[i] = number 
+        top_k_encode_words = unique_words[:k]
+        
+        if not os.path.exists(save_path_encoded):
+            encode_words = []
+            for word, word_count in zip(unique_words, unique_word_counts):
+                encode_words += [word] * word_count
+           
+            with open(f"{datadir}{filename}_encode.txt", "w") as f:
+                for word in encode_words:
+                    f.write(str(word) + " ")
+            print("encode file saved")
+        if not os.path.exists(save_path_encoded_topk):      
+            with open(save_path_encoded_topk, "w") as f:
+                for word in top_k_encode_words:
+                    f.write(str(word) + " ")
+            print("top k encode file saved")
+
+    encode_words(filename, k, datadir)
+
 def visualize_frequency(array, truth_top_k_heavy_hitters, distribution_type, k=sys.maxsize):
     plt.figure()
     plt.xlabel("data value")
