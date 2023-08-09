@@ -6,7 +6,7 @@ from collections import Counter
 # add package path with current directory
 import sys
 sys.path.append('..')
-from utils import selectData, PruneHH, frequency_estimation
+from utils import selectData, PruneHH
 from PIRAPPOR import PIRAPPOR
 
 # DeviceSide
@@ -43,7 +43,7 @@ def DeviceSide(eps_l, l_pref, l_t, P_prefix, P_denylist, selectData, local_rando
     return v
 
 # %%
-def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg):
+def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg, frequency_estimation):
     """Server side algorithm per round
 
     Args:
@@ -60,7 +60,7 @@ def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg):
     # print("debug::D_t: ", D_t)
     # print("debug::f_est: ", f_est)
     
-    unique_elements, estimated_frequency_D, variances = frequency_estimation(D_t, eps_l)
+    unique_elements, estimated_frequency_D, variances = frequency_estimation(D_t)
     sigma = np.sqrt(np.var(variances)) # computes an upper bound on the standard deviation of the frequency estimate for d.
     
     P_prefixlist = PruneHH(sorted_D_t, f_est, tau_0, FPR, sigma, eta)
@@ -73,11 +73,10 @@ def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg):
 
 # %%
 A = [0, 1] # alphebet of the data
-r = 8  # fixed length of the data
+r =8  # fixed length of the data
 N = 1000 # client number
 T = 8 # number of iterations
 eps_l = 1 # local privacy parameter
-selectData = selectData# Data selection mechanism
 P = 10 # Bound on the dimension
 tau_0 = 0.5
 FPR = 0.1 # False positive ratio
@@ -125,7 +124,7 @@ for t in range(T):
             continue
         V_t.append(v_i)
         
-    P_prefix_t, l_t = ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, private_machanism.estimate_all_freqs) # server returns prefix list and segment length for next round
+    P_prefix_t, l_t = ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, private_machanism.estimate_all_freqs, private_machanism.frequency_estimation) # server returns prefix list and segment length for next round
     if len(P_prefix_t) == 0: break
     l_t = max(1, l_t)
     if l_pref >= r:

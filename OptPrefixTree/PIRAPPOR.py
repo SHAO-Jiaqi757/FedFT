@@ -2,6 +2,8 @@
 import random
 from sympy import isprime
 import math
+from collections import Counter
+from scipy.stats import binom
 
 
 
@@ -122,4 +124,31 @@ class PIRAPPOR:
         pairs.sort(reverse=True)
         sorted_freqs, sorted_items = zip(*pairs)
         return sorted_freqs, sorted_items
+
+    def frequency_estimation(self, D):
+        """_summary_
+
+        Args:
+            D (_type_): Dataset
+            opt (bool, optional): Defaults to True.
+        """
+        # f_w for d occurence in D
+        n = len(D)
+        counter = Counter(D)
+        unique_elements = list(counter.keys())
+        
+        estimated_frequency_D = []
+        variances = []
+        for d in unique_elements:
+            f_w = counter[d]
+            binom_successes_f_w = binom.rvs(n=f_w, p=self.p2, size=1)
+            binom_successes_n_minus_f_w = binom.rvs(n=n - f_w, p=self.p1, size=1)
+        
+            tilde_f_w = (binom_successes_f_w + binom_successes_n_minus_f_w - n * self.p1) / (self.p2 - self.p1)
+            estimated_frequency_D.append(tilde_f_w)
+            var = tilde_f_w*(1-self.p1-self.p2)/(self.p2 - self.p1) + n*self.p1*(1-self.p1)/(self.p2-self.p1)**2
+            variances.append(var)
+            
+        return unique_elements, estimated_frequency_D, variances
+
 
