@@ -8,7 +8,7 @@ import sys
 sys.path.append('..')
 from utils import selectData, PruneHH
 from PIRAPPOR import PIRAPPOR
-
+from OHE_2RR import OHE_2RR
 # DeviceSide
 def DeviceSide(eps_l, l_pref, l_t, P_prefix, P_denylist, selectData, local_randomizer):
     """_summary_
@@ -35,15 +35,12 @@ def DeviceSide(eps_l, l_pref, l_t, P_prefix, P_denylist, selectData, local_rando
     else:
         d = selectData(D_pre)
     # print("debug:: d", d) 
-    # print(f"d [{d}] >> (r [{r}] -(l_pref [{l_pref}] + l_t [{l_t}]]))", format(d >> (r-(l_pref+l_t)), '08b'))
-    global_raw_value.append(d >> (r-(l_pref+l_t))) # TODO
-    # v = LocalRandomnizer(d >> (r-(l_pref+l_t)), eps_l) 
     v = local_randomizer(d >> (r-(l_pref+l_t)))
     # print("debug:: v: ", v)
     return v
 
 # %%
-def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg, frequency_estimation):
+def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg):
     """Server side algorithm per round
 
     Args:
@@ -60,8 +57,7 @@ def ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, PrivateAgg, frequency_estimatio
     # print("debug::D_t: ", D_t)
     # print("debug::f_est: ", f_est)
     
-    unique_elements, estimated_frequency_D, variances = frequency_estimation(D_t)
-    sigma = np.sqrt(np.var(variances)) # computes an upper bound on the standard deviation of the frequency estimate for d.
+    sigma = np.sqrt(np.var(f_est)) # computes an upper bound on the standard deviation of the frequency estimate for d.
     
     P_prefixlist = PruneHH(sorted_D_t, f_est, tau_0, FPR, sigma, eta)
         
@@ -114,7 +110,8 @@ for t in range(T):
         print("Round ", t, " Domain: ", D_t)
         
     V_t = []
-    private_machanism = PIRAPPOR(2**(l_pref+l_t), eps_l)
+    # private_machanism = PIRAPPOR(2**(l_pref+l_t), eps_l)
+    private_machanism = OHE_2RR(2**(l_pref+l_t), eps_l)
     global_raw_value = []
     for i in range(N):
         v_i = DeviceSide(eps_l, l_pref-l_t, l_t, P_prefix_t, P_denylist, selectData, private_machanism.local_randomizer)
@@ -124,7 +121,7 @@ for t in range(T):
             continue
         V_t.append(v_i)
         
-    P_prefix_t, l_t = ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, private_machanism.estimate_all_freqs, private_machanism.frequency_estimation) # server returns prefix list and segment length for next round
+    P_prefix_t, l_t = ServerSide(V_t, D_t, eps_l, FPR, tau_0, eta, private_machanism.estimate_all_freqs) # server returns prefix list and segment length for next round
     if len(P_prefix_t) == 0: break
     l_t = max(1, l_t)
     if l_pref >= r:
