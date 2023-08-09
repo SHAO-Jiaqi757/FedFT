@@ -9,7 +9,7 @@ class OHE_2RR:
     def __init__(self, K_, eps, seed=random.seed()):
         self.p1 = 1.0 / (math.exp(eps) + 1)
         self.p2 = 0.5
-        self.K= K # Domain size
+        self.K= K_ # Domain size
         self.eps = eps
     
     def num_to_vec(self, x, l):
@@ -29,8 +29,6 @@ class OHE_2RR:
 
     def local_randomizer(self, x):
         ret = [0] * self.K
-        
-        
         # bernoulli p = 1/2
         for i in range(self.K):
             p = random.random()
@@ -60,4 +58,3 @@ class OHE_2RR:
         sorted_freqs, sorted_items = zip(*pairs)
         
         return sorted_freqs, sorted_items
-    def frequency_estimation(self,)
