@@ -27,7 +27,6 @@ from preprocess import *
 from evaluate_module import EvaluateModule
 
 
-
 def evaluate(evaluation_type:str, triehh_heavy_hitters: list, truth_hh: list):
   """_summary_
 

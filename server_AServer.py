@@ -6,18 +6,17 @@ import random
 from typing import Dict, List
 
 from privacy_module import PrivacyModule
-from server import FAServerPEM
-from _Tree import TrieNumeric
+from server import BaseServer
 from utils import load_clients, blockPrint, enablePrint
 
-blockPrint()
-class Aserver(FAServerPEM):
+# blockPrint()
+class Aserver(BaseServer):
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
         clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR_X", evaluate_type: str = "F1", 
         connection_loss_rate: float = 0, is_uniform_size: bool=False, stop_iter = -1):
             super().__init__(n, m, k, varepsilon, iterations, round, clients, C_truth, privacy_mechanism_type, evaluate_type, connection_loss_rate)
             self.bits_per_iter =ceil(self.m / self.iterations) 
-            self.trie = TrieNumeric(self.bits_per_iter, k = k)
+            # self.trie = TrieNumeric(self.bits_per_iter, k = k)
             self.is_uniform_size = is_uniform_size
             if stop_iter == -1:
                 self.stop_iter = iterations
@@ -47,14 +46,7 @@ class Aserver(FAServerPEM):
             delta_s = s_i - s_0 # required bit length, e.g. 2bits per iter.
             s_0 = s_i # last iter's bit length
 
-            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s)
-            mechanism = privacy_module.privacy_mechanism()
-            
-            if privacy_module.p <= 0.5:
-                privacy_module = PrivacyModule(self.varepsilon, A_i, type="GRR",s_i = s_i, required_bits = delta_s)
-                mechanism = privacy_module.privacy_mechanism() 
-                
-            handle_response = privacy_module.handle_response() 
+
             clients_responses = []
 
             if self.is_uniform_size : adder = int(self.n/self.stop_iter)
@@ -65,12 +57,22 @@ class Aserver(FAServerPEM):
 
             if i == self.stop_iter-1:
                 end_participants = self.n-1
-
-            for client in self.clients[participants: end_participants+1]:
-                prefix_client = client >> (self.m-s_i)
+            for client_id in range(participants, end_participants+1):
+                client_v = self.clients[client_id]
+                privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type,s_i = s_i, required_bits = delta_s, client_id=client_id)
+                mechanism = privacy_module.privacy_mechanism()
+                
+                if self.privacy_mechanism_type=="GRR_X" and privacy_module.p <= 0.5:
+                    privacy_module = PrivacyModule(self.varepsilon, A_i, type="GRR",s_i = s_i, required_bits = delta_s, client_id=client_id)
+                    mechanism = privacy_module.privacy_mechanism() 
+                    
+                handle_response = privacy_module.handle_response() 
+                
+                prefix_client = client_v >> (self.m-s_i)
                 response = mechanism(prefix_client)
+                # simulate connection loss rate
                 p = random.random() 
-                if p >= self.connection_loss_rate:
+                if p >= self.connection_loss_rate and response is not None:
                     clients_responses.append(response)
             participants = end_participants
 

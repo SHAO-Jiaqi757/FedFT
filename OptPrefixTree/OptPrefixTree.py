@@ -10,9 +10,9 @@ from _utils import selectData, PruneHH
 from PIRAPPOR import PIRAPPOR
 from OHE_2RR import OHE_2RR
 from typing import Dict, List
-from server import FAServerPEM
+from server import BaseServer
 
-class OptPrefixTreeServer(FAServerPEM):
+class OptPrefixTreeServer(BaseServer):
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
         clients: List = [], C_truth: List = [], evaluate_type: str = "F1", 
         connection_loss_rate: float = 0, stop_iter = -1, FPR=0.5, tau_0=0.5, eta=0.2, denylist=[], l_t=-1):

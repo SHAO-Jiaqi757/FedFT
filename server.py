@@ -11,7 +11,7 @@ import numpy as np
 
 np.random.seed(0)
 random.seed(0)
-class FAServerPEM():
+class BaseServer():
     def __init__(self, n: int, m: int, k: int, varepsilon: float, iterations: int, round: int, 
     clients: List = [], C_truth: List = [], privacy_mechanism_type: List = "GRR", evaluate_type: str = "F1", 
     connection_loss_rate: float = 0):
@@ -44,7 +44,7 @@ class FAServerPEM():
         self.evaluate_module = EvaluateModule( self.evaluate_type)
 
         self.__available_data_distribution = ["poisson", "uniform", "normal"]
-        self.__available_privacy_mechanism_type = ["GRR", "None", "GRR_X", "GRRX"]
+        self.__available_privacy_mechanism_type = ["GRR", "None", "GRR_X", "OHE_2RR", "PIRAPPOR"]
 
         self.__init_privacy_mechanism(privacy_mechanism_type)
 
@@ -140,9 +140,7 @@ class FAServerPEM():
             delta_s = ceil(i*(self.m-s_0)/self.iterations) - \
                 ceil((i-1)*(self.m-s_0)/self.iterations)
 
-            privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type, s_i = s_i, required_bits = delta_s)
-            mechanism = privacy_module.privacy_mechanism()
-            handle_response = privacy_module.handle_response() 
+
             clients_responses = []
 
             adder = int(self.n/self.iterations)
@@ -150,15 +148,18 @@ class FAServerPEM():
             print(f"Sampling {adder} clients")
             end_participants = participants + adder
 
-        
+    
             if i== stop_iter:
                 end_participants = self.n
-
-            for client in self.clients[participants: end_participants+1]:
-                prefix_client = client >> (self.m-s_i) # prefix s_i bits of the prefix value.
+            for client_id in range(participants, end_participants):
+                client_v = self.clients[client_id]
+                privacy_module = PrivacyModule(self.varepsilon, A_i, type=self.privacy_mechanism_type, s_i = s_i, required_bits = delta_s, client_id=client_id)
+                mechanism = privacy_module.privacy_mechanism()
+                handle_response = privacy_module.handle_response() 
+                prefix_client = client_v >> (self.m-s_i) # prefix s_i bits of the prefix value.
                 response = mechanism(prefix_client)
                 p = random.random() 
-                if p >= self.connection_loss_rate:
+                if p >= self.connection_loss_rate and response is not None:
                     clients_responses.append(response)
             participants = end_participants 
 
