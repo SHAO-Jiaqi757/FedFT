@@ -7,48 +7,48 @@ import csv
 import sys
 sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
 from exp_generate_words import load_words
-from utils import enablePrint, blockPrint
+from utils import enablePrint, blockPrint, encode_file_initate
 from Cipher import *
-from server_AServer import Aserver
+from server_FAServer import FAserver
 from server import BaseServer
 
-enablePrint()
-DATA_PATH = "dataset/words_generate/"
+blockPrint()
+DATA_PATH = "dataset/sentiment/"
 
 
 if __name__ == '__main__':
 
-    save_path_dir = f""  # result path
+    save_path_dir = f"plots/exp_non_iid/"  # result path
     m = 48
-    k = 6
+    k = 5
 
-    # encode_file_initate(k)
 
     init_varepsilon = 0.5
     step_varepsilon = 1
     max_varepsilon = 9.6
-    iterations = 12
+    iterations = 24
 
-    runs = 3
+    runs = 20
     run = True
     results = [
         "No. Clients,Method,varepsilon,0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5"]
+    
+    for _data_name in ["reddit", "sentiment"]:
 
-    for n in range(8000, 10001, 1500):
-
-        filename = f"words_generate_{n}"
+        filename = f"heavyhitters_{_data_name}"
 
         if run:
-            # blockPrint()
-
+            enablePrint()
+            encode_file_initate(k, filename, DATA_PATH)
+            
             truth_top_k = list(
                 map(int, load_words(f"{DATA_PATH}{filename}_encode_top_{k}.txt")))
             clients = list(
                 map(int, load_words(f"{DATA_PATH}{filename}_encode.txt")))
+            n = len(clients)
+            blockPrint()
             for evaluate_module_type in ["recall", "F1"]:
-                # privacy_mechanism_type = "GRR" 
-                # privacy_mechanism_type = "OHE_2RR"
-                privacy_mechanism_type = "PIRAPPOR"
+                privacy_mechanism_type = "GRR"  # ["GRR", "None","OUE"]
 
             # ----Standard Tree----( GRR + Uniform + Trie) #
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
                 # ----GTF----( GRR + Trie + client_size_fitting ) #
 
-                server = Aserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  privacy_mechanism_type=privacy_mechanism_type, evaluate_type=evaluate_module_type,
                                  is_uniform_size=True
                                  )
@@ -74,9 +74,9 @@ if __name__ == '__main__':
                 results.append(
                     f"{n}, GTF, {evaluate_module_type}, " + ",".join(map(str, y_gtf)))
 
-                # privacy_mechanism_type = "GRR_X"  # ["GRR", "None","OUE"]
+                privacy_mechanism_type = "GRR_X"  # ["GRR", "None","OUE"]
                 # ----XTU----( GRR_X + Trie + Uniform size) #
-                server = Aserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  privacy_mechanism_type=privacy_mechanism_type, evaluate_type=evaluate_module_type,
                                  is_uniform_size=True
                                  )
@@ -87,9 +87,9 @@ if __name__ == '__main__':
                 results.append(
                     f"{n}, XTU, {evaluate_module_type}, " + ",".join(map(str, y_xtu)))
 
-            #    ----FedFT----( GRR_X + Trie + client_size_fitting + optimization) #
+            #    ----FA_----( GRR_X + Trie + client_size_fitting + optimization) #
 
-                server = Aserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, init_varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  evaluate_type=evaluate_module_type,
                                  is_uniform_size=False)
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                 results.append(
                     f"{n}, XTF, {evaluate_module_type}, " + ",".join(map(str, y_xtf)))
 
-                with open('output.csv', mode='w', newline='') as file:
+                with open(f"{save_path_dir}{filename}_intra_{m}.csv", "w") as file:
                     writer = csv.writer(file)
                     for row in results:
                         writer.writerow(row.split(','))

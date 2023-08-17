@@ -263,7 +263,7 @@ def plot(exp, save_filename="./results/zipfs.png", title="", line_type='.--', y_
     models = list(exp.keys())
     color = {
         "PEM": 'teal', "PEM(GTU)": 'teal',
-        "FedFT": "red", "FedFT(XTF)": 'red',
+        "FA_": "red", "FA_(XTF)": 'red',
         'GTF': "yellowgreen",
         'XTU': "violet", "TrieHH": "lightslategrey",
         "OUE": "orange", "OLH": "blue", "THE": "green",
@@ -274,7 +274,7 @@ def plot(exp, save_filename="./results/zipfs.png", title="", line_type='.--', y_
         # if models[i] == "PEM":
         #     model_name = "PEM(GTU)"
         # elif models[i] == "XTF":
-        #     model_name = "FedFT"
+        #     model_name = "FA_"
         # else:
         model_name = models[i]
 

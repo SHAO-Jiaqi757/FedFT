@@ -7,4 +7,4 @@
 
 # sync
 
-rsync -r ./ NCEL:~/project/fedft
+rsync -r ./ NCEL:~/project/FA_

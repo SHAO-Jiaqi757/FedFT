@@ -23,6 +23,8 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             _type_: f1 score
         """
+        if truth_top_k is None:
+            return -1
         if len(estimate_top_k) == 0:
             return 0   
         top_k = len(truth_top_k)
@@ -45,6 +47,8 @@ class EvaluateModule(EvaluateModuleABC):
         Returns:
             float: Recall
         """
+        if truth_top_k is None:
+            return -1
         top_k = len(truth_top_k)
         print(f"Find {len(estimate_top_k)} top-k heavy hitters")
         truth_top_k = truth_top_k[:top_k]

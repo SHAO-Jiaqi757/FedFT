@@ -9,12 +9,12 @@ sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
 from tqdm import tqdm
 from exp_generate_words import load_words
 
-from fedft import fedft_cluster, std_out_err_redirect_tqdm, distance
+from FA_ import FA_cluster, std_out_err_redirect_tqdm, distance
 
 DATA_PATH ="dataset/steps/"
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def fed_ft_aggregation(clients: list, k: int, varepsilon: float = 2, m=64, iterations=32, stop_iter=-1):
+def FA_aggregation(clients: list, k: int, varepsilon: float = 2, m=64, iterations=32, stop_iter=-1):
     """_summary_
 
     Args:
@@ -32,7 +32,7 @@ def fed_ft_aggregation(clients: list, k: int, varepsilon: float = 2, m=64, itera
     with std_out_err_redirect_tqdm() as orig_stdout:
         # tqdm needs the original stdout
         # and dynamic_ncols=True to autodetect console width
-        results = Parallel(n_jobs=clusters)(delayed(fedft_cluster)(
+        results = Parallel(n_jobs=clusters)(delayed(FA_cluster)(
             clients[i], k, m=m, iterations=iterations, varepsilon=varepsilon, stop_iter=stop_iter ) for i in tqdm(range(clusters)))
 
     candidates_among_clusters = {}
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     cumulate = 0
     enablePrint()
     for rnd in range(runs):
-        cumulate += fed_ft_aggregation(clients, k, varepsilon=varepsilon,\
+        cumulate += FA_aggregation(clients, k, varepsilon=varepsilon,\
              m=m, iterations=iterations, stop_iter=stop_iter)[0]
     print(cumulate/runs)
     

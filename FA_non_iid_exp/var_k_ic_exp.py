@@ -9,7 +9,7 @@ sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
 from exp_generate_words import load_words
 from utils import enablePrint, blockPrint
 from Cipher import *
-from server_AServer import Aserver
+from server_FAServer import FAserver
 from server import BaseServer
 
 enablePrint()
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
                 # ----GTF----( GRR + Trie + client_size_fitting ) #
 
-                server = Aserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  privacy_mechanism_type=privacy_mechanism_type, evaluate_type=evaluate_module_type,
                                  is_uniform_size=True
                                  )
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
                 privacy_mechanism_type = "GRR_X"  # ["GRR", "None","OUE"]
                 # ----XTU----( GRR_X + Trie + Uniform size) #
-                server = Aserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  privacy_mechanism_type=privacy_mechanism_type, evaluate_type=evaluate_module_type,
                                  is_uniform_size=True
                                  )
@@ -81,9 +81,9 @@ if __name__ == '__main__':
                 results.append(
                     ["XTU", k, evaluate_module_type,varepsilon, y_xtu])
 
-            #    ----FedFT----( GRR_X + Trie + client_size_fitting + optimization) #
+            #    ----FA_----( GRR_X + Trie + client_size_fitting + optimization) #
 
-                server = Aserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
+                server = FAserver(n, m, k, varepsilon, iterations, runs, clients=clients, C_truth=truth_top_k,
                                  evaluate_type=evaluate_module_type,
                                  is_uniform_size=False)
 

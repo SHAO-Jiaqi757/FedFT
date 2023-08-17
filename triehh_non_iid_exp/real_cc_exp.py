@@ -81,7 +81,7 @@ if __name__ == '__main__':
     # delta for differential privacy
     delta = 2.3e-12
     # repeat simulation for num_runs times
-    num_runs = 20
+    num_runs = 2
   
     filename = f"heavyhitters_combined"
     file_path = f"dataset/sentiment/{filename}.txt"
@@ -114,3 +114,6 @@ if __name__ == '__main__':
                 f1_scores.append(evaluate_score)
             else: 
                 recall_scores.append(evaluate_score)
+        
+        
+        

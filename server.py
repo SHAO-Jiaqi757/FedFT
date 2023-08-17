@@ -52,7 +52,8 @@ class BaseServer():
             self.__init_clients()
         else:
             self.n = len(self.clients)
-        if not len(C_truth):
+            
+        if C_truth is not None and len(C_truth) > 0:
             self.C_truth = sort_by_frequency(self.clients, self.k)
         else: self.C_truth = C_truth
 
@@ -182,18 +183,19 @@ class BaseServer():
             np.random.shuffle(self.clients)
             self.rnd = rnd 
             # self.varepsilon -= 0.01 * self.rnd
-            print("eps", self.varepsilon)
+            print(">>>> eps", self.varepsilon)
             self.A_i = self.predict_heavy_hitters()
             
             estimate_top_k = list(self.A_i.keys())[:min(self.k, len(self.A_i))]
-            
-            print(f"[eps = {self.varepsilon}] Truth ordering: {self.C_truth}")
-            print(f"[eps = {self.varepsilon}] Predicted ordering: {estimate_top_k}")
+
             score = self.evaluate_module.evaluate(self.C_truth, estimate_top_k)
-            print(f"{self.evaluate_type}= {score}")
+            if score >= 0: 
+                print(f"[eps = {self.varepsilon}] Truth ordering: {self.C_truth}")
+                print(f"[eps = {self.varepsilon}] Predicted ordering: {estimate_top_k}")
             evaluate_score += score 
         evaluate_score /= self.round
-        print(
+        if evaluate_score >= 0:
+            print(
             f"[Server End]:: varepsilon = {self.varepsilon}, {self.evaluate_type}= {evaluate_score:.2f}")
         return self.varepsilon, evaluate_score
 
