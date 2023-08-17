@@ -12,4 +12,5 @@ exp_*
 rsync.sh
 pure_ldp
 *.ipynb
-_Tree
+myenv
+*.pptx

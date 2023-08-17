@@ -34,7 +34,6 @@ def encode_words(filename, k: int, datapath=DATA_PATH) :
     
     client_path = f"{datapath}{filename}.txt"
     freq_path = f"{datapath}{filename}_count.txt"
-    print("debug::", client_path)
     words = load_words(client_path)
     word_counts = load_words_count(freq_path, k)
     top_k_words = list(word_counts.keys())
@@ -99,3 +98,6 @@ def get_non_iid_clusters_topk(k, word_count_file_list: list = []):
 
   return top_k
     
+
+if __name__ == "__main__":
+  encode_words("heavyhitters_sentiment", 2000, "dataset/sentiment/")
