@@ -1,30 +1,12 @@
-# coding=utf-8
-# Copyright 2020 The Federated Heavy Hitters AISTATS 2020 Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import sys
 # add absolute path of current path's parent to import modules
 sys.path.append('/'.join(sys.path[0].split('/')[:-1]))
 
 CUR_DIR_NAME = sys.path[0].split('/')[-1] 
 
-import matplotlib
-import matplotlib.pyplot as plt
+
 import numpy as np
 import pickle
-import scipy
-import scipy.stats
 from collections import OrderedDict, defaultdict
 from preprocess import *
 import math
@@ -32,8 +14,7 @@ import random
 from exp_generate_words import load_words_count
 from evaluate_module import EvaluateModule
 
-matplotlib.rc('xtick', labelsize=14)
-matplotlib.rc('ytick', labelsize=14)
+
 
 
 """An implementation of Trie Heavy Hitters (TrieHH).
@@ -130,7 +111,7 @@ class SimulateTrieHH(object):
     self.server_state.quit_sign = True
     for prefix in votes:
       if votes[prefix] >= self.theta:
-        self.server_state.trie[prefix] = None
+        self.server_state.trie[prefix] = votes[prefix]
         self.server_state.quit_sign = False
 
   def start(self, batch_size):
@@ -148,32 +129,15 @@ class SimulateTrieHH(object):
     heavy_hitters = []
     for run in range(self.num_runs):
       self.start(self.batch_size)
-      raw_result = self.server_state.trie.keys()
+      raw_result = sorted(self.server_state.trie.items(), key=lambda x: x[1], reverse=True)
       results = []
-      for word in raw_result:
+      for word, _ in raw_result:
         if word[-1:] == '$':
           results.append(word.rstrip('$'))
       # print(f'Discovered {len(results)} heavy hitters in run #{run+1}')
       # print(results)
       heavy_hitters.append(results)
     return heavy_hitters
-
-def main():
-
-  # length of longest word
-  max_word_len = 10
-  # epsilon for differential privacy
-  epsilon = 2 
-  # delta for differential privacy
-  delta = 2.3e-12
-
-  # repeat simulation for num_runs times
-  num_runs = 20
-  
-  simulate_triehh = SimulateTrieHH(
-      max_word_len=max_word_len, epsilon=epsilon, delta=delta, num_runs=num_runs)
-  triehh_heavy_hitters = simulate_triehh.get_heavy_hitters()
-
 
 def evaluate(evaluation_type:str, triehh_heavy_hitters: list, truth_hh: list):
   """_summary_
@@ -189,79 +153,10 @@ def evaluate(evaluation_type:str, triehh_heavy_hitters: list, truth_hh: list):
   evals = []
   evaluation = EvaluateModule(evaluation_type)
   for estimate_hh in triehh_heavy_hitters:
+    if len(estimate_hh) < len(truth_hh):
+        estimate_hh += [''] * (len(truth_hh) - len(estimate_hh))
+    else:
+        estimate_hh = estimate_hh[:len(truth_hh)]
     eval = evaluation.evaluate(truth_top_k=truth_hh, estimate_top_k=estimate_hh)
     evals.append(eval)
   return np.mean(evals), np.std(evals)
-
-if __name__ == '__main__':
-
-  # load dictionary
-  # please provide your own dictionary if you would like to
-  # run out-of-vocabulary experiments
-  dictionary = 'dictionary.txt'
-  evaluate_type = "F1"
-  # maximum word length
-  max_word_len = 10
-  
-  for n in range(2000, 10001, 1500): 
-    filename = f"words_generate_{n}"
-    file_path = f"dataset/words_generate/{filename}.txt"
-    file_path_word_counts = f"dataset/words_generate/{filename}_count.txt" 
-    client_path = generate_triehh_clients(file_path)
-    
-    # {'smog:': 244, 'pianist:': 103}
-    word_counts = load_words_count(file_path_word_counts, n)
-    
-    with open(client_path, 'rb') as fp:
-      clients_top_word = pickle.load(fp)
-    
-    # compute frequencies of top words
-    top_word_frequencies = {}
-    sum_num = sum(word_counts.values())
-    for word in word_counts:
-      top_word_frequencies[word] = word_counts[word] * 1.0 / sum_num
-
-    clients_top_word = np.array(clients_top_word)
-    
-    # exp_triehh/clients_{file_name}.txt
-    client_path_freqs = f"{CUR_DIR_NAME}/clients_freq_{filename}.txt"
-    with open(client_path_freqs, 'wb') as fp:
-      pickle.dump(top_word_frequencies, fp)
-
-    # generate_sfp_clients(clients_top_word, max_word_len)
-
-    print('client count:', len(clients_top_word))
-    print('top word count:', len(word_counts))
-    
-    max_k = 5
-
-    # length of longest word
-    max_word_len = 10
-    # delta for differential privacy
-    delta = 2.3e-12
-    # repeat simulation for num_runs times
-    num_runs = 40
-    
-    evals = []
-    
-    # epsilon for differential privacy
-    for epsilon in [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]:
-      simulate_triehh = SimulateTrieHH(client_path,
-        max_word_len=max_word_len, epsilon=epsilon, delta=delta, num_runs=num_runs)
-    
-      triehh_heavy_hitters = simulate_triehh.get_heavy_hitters()
-    
-    
-      truth_hh = list(word_counts.keys())[:max_k]
-    
-    
-      # print(f"top {max_k} words:", truth_hh)
-    
-      evaluate_score, _ = evaluate(evaluate_type, triehh_heavy_hitters, truth_hh)
-      evals.append(evaluate_score)
-    
-    
-    # print -->  a|b ... | ... for a, b in evals, a, b
-      print(f"{n}|{'|'.join([str(round(a, 3)) for a in evals])}|")
-    
-        
